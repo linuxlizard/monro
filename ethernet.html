@@ -1,0 +1,67 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Ethernet Port Status</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Display Router Ethernet Port Status">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous"></script>
+
+  </head>
+
+	<body>
+	<div class="container">
+		<h1 id="ethernet_status">Ethernet Status</h1>
+		<h2 id="product">{{ escape(product_info['product_name']) }}</h2>
+
+		<p>
+			<table class="table table-striped">
+			<thead>
+				<tr>
+					<td>Port</td>
+					<td>Link</td>
+					<td>Speed</td>
+					<td>PoE</td>
+					<td>PoE Detect</td>
+					<td>PoE Class</td>
+					<td>PoE Allocation</td>
+					<td>PoE Current</td>
+					<td>PoE Voltage</td>
+					<td>Last deltatime (ms)</td>
+					<td>Mean deltatime (ms)</td>
+					<td>Median deltatime (ms)</td>
+					<td>Stdev deltatime (ms)</td>
+				</tr>
+			</thead>
+			<tbody>
+				{% for p in ports %}
+				<tr>
+					<td>{{ escape(str(p['port'])) }}</td>
+					<td>{{ escape(p['link']) }}</td>
+					<td>{{ escape(p['link_speed']) }}</td>
+					<td>{{ escape(p.get('poe_power', "N/A")) }}</td>
+					<td>{{ escape(p.get('poe_detect', "-")) }}</td>
+					<td>{{ escape(p.get('poe_class', "-")) }}</td>
+					<td>{{ escape(str(p.get('poe_power_allocation', "-"))) }}</td>
+					<td>{{ escape(str(p.get('poe_current', "-"))) }}</td>
+					<td>{{ escape(str(p.get('poe_voltage', "-"))) }}</td>
+					<td>{{ escape( "%.2f" % (stats[p['port']].get('last',0) / 1e6)) 
+						}}</td>
+					<td>{{ escape( "%.2f" % (stats[p['port']].get('mean',0) / 1e6))
+						}}</td>
+					<td>{{ escape( "%.2f" % (stats[p['port']].get('median',0) / 1e6))
+						}}</td>
+					<td>{{ escape( "%.2f" % (stats[p['port']].get('std',0) / 1e6))
+						}}</td>
+				</tr>
+				{% end %}
+			</tbody>
+			</table>
+		</p>
+
+	</div>
+
+	</body>
+</html>

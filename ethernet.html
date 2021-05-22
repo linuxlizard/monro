@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -14,7 +13,7 @@
 	<body>
 	<div class="container">
 		<h1 id="ethernet_status">Ethernet Status</h1>
-		<h2 id="product">{{ escape(product_info['product_name']) }}</h2>
+		<h2 id="product_name">{{ escape(product_info['product_name']) }}</h2>
 
 		<p>
 			<table class="table table-striped">
@@ -33,6 +32,7 @@
 					<td>Mean deltatime (ms)</td>
 					<td>Median deltatime (ms)</td>
 					<td>Stdev deltatime (ms)</td>
+					<td>Cool</td>
 				</tr>
 			</thead>
 			<tbody>
@@ -55,6 +55,7 @@
 						}}</td>
 					<td>{{ escape( "%.2f" % (stats[p['port']].get('std',0) / 1e6))
 						}}</td>
+					<td id="{{"port%s" % p['port']}}"> </td>
 				</tr>
 				{% end %}
 			</tbody>
@@ -63,5 +64,7 @@
 
 	</div>
 
+	<script src="https://d3js.org/d3.v6.min.js"></script>
+	<script src="dave.js"></script>
 	</body>
 </html>

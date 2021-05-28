@@ -3,30 +3,29 @@
 
 App = {};
 
-App.update = function() {
-	console.log("updating data...");
-
-	d3.csv("http://localhost:8888/api/lan")
-	.then(function(data) {
-		const row = data[data.length-1];
-		console.log(data);
-
-		const d = d3.select("#graph")
-				.select("svg")
-				.select("g")
-				.selectAll("path");
-		console.log(d.datum());
-
-		let new_data = d.datum();
-		new_data.shift();
-		new_data.push(row);
-		console.log(`new_data=${new_data}`);
-
-		d.datum(new_data)
-//			.join("d")
-
-	})
-}
+//App.update = function() {
+//	console.log("updating data...");
+//
+//	d3.csv("http://localhost:8888/api/lan")
+//	.then(function(data) {
+//		const row = data[data.length-1];
+//		console.log(data);
+//
+//		const d = d3.select("#graph")
+//				.select("svg")
+//				.select("g")
+//				.selectAll("path");
+//		console.log(d.datum());
+//
+//		let new_data = d.datum();
+//		new_data.push(row);
+//		console.log(`new_data=${new_data}`);
+//
+//		d.datum(new_data)
+////			.join("d")
+//
+//	})
+//}
 
 App.run = function() {
 	d3.csv("http://localhost:8888/api/lan")
@@ -66,7 +65,8 @@ App.run = function() {
 		const xScale = d3
 			.scaleLinear()
 //			.domain(d3.extent(data,x))
-			.domain([0,data.length-1])
+			.domain([0,256-1]) // maximum amount of data to graph
+//			.domain([0,data.length-1])
 			.range([0, width - margin.left - margin.right])
 			;
 
@@ -96,14 +96,22 @@ App.run = function() {
 			.attr("stroke", "#af9358")
 			.attr("stroke-width", 2)
 
+		// axes
+		const yAxisGenerator = d3.axisLeft()
+			.scale(yScale)
+		const yAxis = bounds.append("g")
+			.call(yAxisGenerator)
+
 //		setInterval(App.update, 5000);
 		setInterval( function() {
 			console.log("updating data...");
 
 			d3.csv("http://localhost:8888/api/lan")
 			.then(function(data) {
+				console.log(`margin=${margin.top},${margin.left},${margin.bottom},${margin.right}`);
+
 				const row = data[data.length-1];
-				console.log(data);
+				console.log(d3.extent(data, d => d['bps']));
 
 				const d = d3.select("#graph")
 						.select("svg")
@@ -111,14 +119,29 @@ App.run = function() {
 						.select("path");
 				console.log(d.datum());
 
+				// need to rescale for the new data
+				const new_yScale = d3
+					.scaleLinear()
+					.domain(d3.extent(data, y))
+					.range([height - margin.top - margin.bottom, 0])
+					;
+
 				let new_data = d.datum();
-				new_data.shift();
+				if (new_data.length >= 256) {
+					new_data.shift();
+				}
 				new_data.push(row);
 //				console.log(`new_data=${new_data}`);
 
 				// Redraw the line.
+				const new_lineGenerator = d3.line()
+					.x((d,i) => xScale(i))
+		//			.x(d => xScale(x(d)))
+					.y(d => new_yScale(y(d)))
+					;
+
 				d.datum(new_data)
-					.attr("d", lineGenerator)
+					.attr("d", new_lineGenerator)
 
 			})
 			}

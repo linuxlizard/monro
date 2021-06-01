@@ -13,7 +13,7 @@ import tornado.ioloop
 import tornado.web
 import tornado.httpclient
 
-from cpnetem import webapi
+#from cpnetem import webapi
 import logfile
 
 hostname = "172.16.253.1"

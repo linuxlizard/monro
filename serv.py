@@ -224,10 +224,11 @@ def make_app():
         (r"/client", ClientHandler),
         (r"/lan", LanHandler),
         (r"/api/lan", APILanHandler),
-#        (r"/lan.js", tornado.web.StaticFileHandler, {"path":"."} ),
+        (r"/css/(.*)", tornado.web.StaticFileHandler, {"path":"css"} ),
+        (r"/js/(.*)", tornado.web.StaticFileHandler, {"path":"js"} ),
         ],
         debug=True,
-        static_path="./js",
+#        static_path="./js",
     )
 
 def init_lan_status_thread():

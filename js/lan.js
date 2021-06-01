@@ -1,31 +1,7 @@
-//  keys in /api/lan
+//  keys in /api/lan/stats
 //  bps,collisions,ibps,idrops,ierrors,imcasts,in,ipackets,noproto,obps,oerrors,omcasts,opackets,out,ts,timestamp
 
 App = {};
-
-//App.update = function() {
-//	console.log("updating data...");
-//
-//	d3.csv("http://localhost:8888/api/lan")
-//	.then(function(data) {
-//		const row = data[data.length-1];
-//		console.log(data);
-//
-//		const d = d3.select("#graph")
-//				.select("svg")
-//				.select("g")
-//				.selectAll("path");
-//		console.log(d.datum());
-//
-//		let new_data = d.datum();
-//		new_data.push(row);
-//		console.log(`new_data=${new_data}`);
-//
-//		d.datum(new_data)
-////			.join("d")
-//
-//	})
-//}
 
 App.run = function() {
 	d3.csv("http://localhost:8888/api/lan")
@@ -35,20 +11,17 @@ App.run = function() {
 		const width = 1000;
 		const height = 200;
 
-		let counter = 0;
-		data.forEach( value => {value["counter"] = counter++;} );
-
-		const x = (d) => d["counter"];
+//		const y = (d) => Number(d["in"]);
 		const y = (d) => Number(d["bps"]);
 
 		const margin = {
 			top: 10,
 			right: 10,
 			bottom: 50,
-			left: 50 };
+			left: 100 };
 
 		const wrapper = d3
-			.select("#graph")
+			.select("#graph1")
 			.append("svg")
 				.attr("width", width)
 				.attr("height", height)
@@ -59,8 +32,6 @@ App.run = function() {
 				"transform",
 				`translate(${margin.left}px, ${margin.top}px)`
 			);
-
-//		bounds.append("path").attr("d", "M 0 0 L 100 0 L 100 100 L 0 50 Z")
 
 		const xScale = d3
 			.scaleLinear()
@@ -74,20 +45,13 @@ App.run = function() {
 			.scaleLinear()
 			.domain(d3.extent(data, y))
 			.range([height - margin.top - margin.bottom, 0])
+			.nice()
 			;
-
-//		data.forEach( d => { console.log(yScale(y(d)));
-//							console.log(`d=${y(d)}`);
-//							} 
-//					);
 
 		const lineGenerator = d3.line()
 			.x((d,i) => xScale(i))
-//			.x(d => xScale(x(d)))
 			.y(d => yScale(y(d)))
 			;
-
-//		console.log(lineGenerator(data));
 
 		const line = bounds.append("path")
 			.datum(data)
@@ -97,12 +61,25 @@ App.run = function() {
 			.attr("stroke-width", 2)
 
 		// axes
+		const xAxisGenerator = d3.axisBottom()
+			.scale(xScale)
+			;
+		const xAxis = bounds.append("g")
+			.call(xAxisGenerator)
+			.style("transform", `translateY(${height-margin.bottom-margin.top}px)`)
+			;
+
 		const yAxisGenerator = d3.axisLeft()
 			.scale(yScale)
+			.tickFormat(d3.format("~s"))
+			;
 		const yAxis = bounds.append("g")
+			.attr("class", "yaxis")
 			.call(yAxisGenerator)
+			;
 
-//		setInterval(App.update, 5000);
+//		let counter = 1;
+
 		setInterval( function() {
 			console.log("updating data...");
 
@@ -110,44 +87,59 @@ App.run = function() {
 			.then(function(data) {
 				console.log(`margin=${margin.top},${margin.left},${margin.bottom},${margin.right}`);
 
+				// grab just the last row of data
 				const row = data[data.length-1];
-				console.log(d3.extent(data, d => d['bps']));
 
-				const d = d3.select("#graph")
-						.select("svg")
-						.select("g")
-						.select("path");
-				console.log(d.datum());
+				// artificial increase so I can test redrawing the y axis
+//				row['bps'] = Number(row['bps']) + 10e6*counter++;
+
+				console.log(d3.extent(data, y));
+
+				// fetch current element & data
+//				const d = d3.select("#graph")
+//						.select("svg")
+//						.select("g")
+//						.select("path");
 
 				// need to rescale for the new data
 				const new_yScale = d3
 					.scaleLinear()
 					.domain(d3.extent(data, y))
 					.range([height - margin.top - margin.bottom, 0])
+					.nice()
 					;
 
-				let new_data = d.datum();
+				const new_yAxisGenerator = d3.axisLeft()
+					.scale(new_yScale)
+					.tickFormat(d3.format("~s"))
+					;
+
+				d3.select("g.yaxis")
+					.call(new_yAxisGenerator)
+					;
+
+				// get the current data, add newest sample
+				let new_data = line.datum();
+//				let new_data = d.datum();
 				if (new_data.length >= 256) {
 					new_data.shift();
 				}
 				new_data.push(row);
-//				console.log(`new_data=${new_data}`);
 
 				// Redraw the line.
 				const new_lineGenerator = d3.line()
 					.x((d,i) => xScale(i))
-		//			.x(d => xScale(x(d)))
 					.y(d => new_yScale(y(d)))
 					;
 
-				d.datum(new_data)
+				line.datum(new_data)
 					.attr("d", new_lineGenerator)
+					;
 
-			})
-			}
-			, 5000
-		);
-	})
+			}) // end csv fetch callback
+		} // end setInterval callback
+		, 5000);  // end setInterval()
+	}) // end original csv fetch callback
 }
 
 window.onload=function() 

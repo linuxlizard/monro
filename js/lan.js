@@ -146,8 +146,28 @@ window.onload=function()
 {
 	console.log("hello, world");
 
-	App.run();
+	let bps_graph = new Graph(1000,200,"bps","#graph1");
+	let ibps_graph = new Graph(1000,200,"ibps","#graph2");
+	let obps_graph = new Graph(1000,200,"obps","#graph3");
 
-//	setInterval(run, 5000);
+	d3.csv("http://localhost:8888/api/lan")
+	.then(function(data) {
+		bps_graph.draw(data);
+		ibps_graph.draw(data);
+		obps_graph.draw(data);
+	});
+
+	setInterval( function() {
+		d3.csv("http://localhost:8888/api/lan")
+		.then(function(data) {
+			bps_graph.update(data);
+			ibps_graph.update(data);
+			obps_graph.update(data);
+		});
+		}
+		, 5000
+	);
+
+//	App.run();
 }
 

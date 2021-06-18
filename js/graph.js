@@ -87,12 +87,19 @@ class Graph {
 		// grab just the last row of data
 		const row = data[data.length-1];
 
-		console.log(d3.extent(data, this.y));
+		// get the current data, add newest sample
+		let new_data = this.line.datum();
+		if (new_data.length >= 256) {
+			new_data.shift();
+		}
+		new_data.push(row);
+
+		console.log(d3.extent(new_data, this.y));
 
 		// need to rescale for the new data
 		const new_yScale = d3
 			.scaleLinear()
-			.domain(d3.extent(data, this.y))
+			.domain(d3.extent(new_data, this.y))
 			.range([this.height - this.margin.top - this.margin.bottom, 0])
 			.nice()
 			;
@@ -105,14 +112,6 @@ class Graph {
 		d3.select("g.yaxis")
 			.call(new_yAxisGenerator)
 			;
-
-		// get the current data, add newest sample
-		let new_data = this.line.datum();
-//				let new_data = d.datum();
-		if (new_data.length >= 256) {
-			new_data.shift();
-		}
-		new_data.push(row);
 
 		// Redraw the line.
 		const new_lineGenerator = d3.line()

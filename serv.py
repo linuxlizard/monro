@@ -5,6 +5,7 @@
 
 import os
 import time
+import json
 import threading
 import collections
 
@@ -13,39 +14,42 @@ import tornado.ioloop
 import tornado.web
 import tornado.httpclient
 
-#from cpnetem import webapi
 import logfile
 
-hostname = "172.16.253.1"
+#hostname = "172.16.253.1"
 
-class EthernetPortStatistics:
+class StatusEthernetPort:
     # capture the deltatime in reading the port status
-    def __init__(self, port_number):
+    def __init__(self, port_number, maxlen=256):
         self.port = port_number
-        self.last = 0
-        # XXX note will grow without bound but this little program is only
-        # intended to run for a short time anyway
-        self.samples = []
 
-    def update(self, n):
-        self.last = n
-        self.samples.append(n)
-        print(f"port={self.port} last={self.last} samples={self.samples}")
+        # last value of /status/ethernet/[port_number]
+        self.last = {}
 
-    def stats(self):
-        ndata = np.asarray(self.samples)
-        return { "last": self.last,
-                "min": ndata.min(),
-                "max" : ndata.max(),
-                "mean" : ndata.mean(),
-                "median" : np.median(ndata),
-                "std" : ndata.std() }
+        # array of dict of values from /status/ethernet/[port_number]
+        self.samples = collections.deque(maxlen=maxlen)
 
-class EthernetDeviceMeasure:
+    def update(self, port_dict, timestamp):
+        self.last = dict(port_dict)
+        self.last["timestamp"] = timestamp
+        self.samples.append(self.last)
+        print(f"port={self.port} last={self.last}")
+
+#    def stats(self):
+#        ndata = np.asarray(self.samples)
+#        return { "last": self.last,
+#                "min": ndata.min(),
+#                "max" : ndata.max(),
+#                "mean" : ndata.mean(),
+#                "median" : np.median(ndata),
+#                "std" : ndata.std() }
+
+class StatusEthernet:
+    # measuring /status/ethernet across time
     def __init__(self, hostname, ports_number_list):
         self.hostname = hostname
         self.ports = ports_number_list
-        self.port_stats = { k:EthernetPortStatistics(k) for k in ports_number_list }
+        self.port_stats = { k:StatusEthernetPort(k) for k in ports_number_list }
         print(f"ports_number_list={ports_number_list} self.port_stats={self.port_stats}")
 
     def update(self, port_stats):
@@ -53,13 +57,19 @@ class EthernetDeviceMeasure:
         #   key: port number
         #   value: new deltatime sample
         print(f"update hostname={self.hostname} ports={self.ports} new={port_stats}")
+        timestamp = time.time()
         for p in port_stats:
             print(f"update p={p}")
-            self.port_stats[p['port']].update(p['deltatime'])
+            self.port_stats[p['port']].update(p, timestamp)
 
-    @property
-    def stats(self):
-        return { k:self.port_stats[k].stats() for k in self.ports }
+    def get_csv(self):
+
+        # XXX this is an abbreviated set of stats
+        # build the CSV header 
+        csv_header_str = "timestamp,port,link,link_speed,poe_voltage,poe_current"
+
+#        iters = [iter(p) for p in self.port_stats)]
+
 
 
 class LANStatusThread(threading.Thread):
@@ -122,7 +132,7 @@ class LANStatusThread(threading.Thread):
 
 # dict of /status/ethernet sampling
 # key: hostname
-# value: EthernetDeviceMeasure
+# value: StatusEthernet
 # TODO make async/thread safe
 ethernet_stats = {}
 
@@ -137,7 +147,7 @@ class ClientHandler(tornado.web.RequestHandler):
     async def get(self):
         print("ClientHandler get")
         http = tornado.httpclient.AsyncHTTPClient()
-        response = await http.fetch("http://172.16.253.1/api/status/wlan", 
+        response = await http.fetch(f"http://{hostname}/api/status/wlan", 
                                     auth_username="admin", 
                                     auth_password=os.getenv("CP_PASSWORD"))
         json = tornado.escape.json_decode(response.body)
@@ -148,21 +158,21 @@ class ClientHandler(tornado.web.RequestHandler):
         
 class RouterHandler(tornado.web.RequestHandler):
     def get_args(self):
-        router = self.get_argument("router", default=hostname)
+        router = self.get_argument("router")
         port = self.get_argument("port", default="80")
         return "%s:%s" % (router, port)
 
-    def get_conn(self):
-        router = self.get_argument("router", default=hostname)
-        port = self.get_argument("port", default="80")
-        conn = webapi.WebAPI(hostname=router, scheme="http", port=port, verify=False)
-        return conn
+    async def http_get(self, url):
+        http = tornado.httpclient.AsyncHTTPClient()
+        response = await http.fetch(url, 
+                                    auth_username="admin", 
+                                    auth_password=os.getenv("CP_PASSWORD"))
+        json = tornado.escape.json_decode(response.body)
+        return json['data']
+
 
 class ProductInfoHandler(RouterHandler):
     async def get(self):
-#        conn = self.get_conn()
-#        product_info = conn.get("/api/status/product_info")
-#        print(product_info)
         url = self.get_args()
         http = tornado.httpclient.AsyncHTTPClient()
         response = await http.fetch(f"http://{url}/api/status/product_info", 
@@ -173,6 +183,17 @@ class ProductInfoHandler(RouterHandler):
         product_info = json['data']
         self.render("product_info.html", 
             product_info = product_info )
+
+class APIEthernetHandler(RouterHandler):
+    async def get(self):
+        self.set_header("Content-Type", "text/json")
+
+        url = self.get_args()
+        ethernet_stats = await self.http_get(f"http://{url}/api/status/ethernet")
+        
+        s = json.dumps(ethernet_stats)
+        print(f"ethernet_stats={ethernet_stats}")
+        self.write(s)
 
 class APILanHandler(RouterHandler):
     def get(self):
@@ -192,29 +213,35 @@ class LanHandler(RouterHandler):
         self.render("lan.html", stats=stats)
 
 class StatusEthernetHandler(RouterHandler):
-    def get(self):
-        conn = self.get_conn()
+    # https://stackoverflow.com/questions/35254742/tornado-server-enable-cors-requests#35259440
+    def set_default_headers(self):
+        self.set_header("Access-Control-Allow-Origin", "*")
 
-        # who are we talking to?
-        product_info = conn.get("/api/status/product_info")
-        print(f"product={product_info}")
+    async def get(self):
+        url = self.get_args()
+
+        # what router are we talking to?
+        product_info = await self.http_get(f"http://{url}/api/status/product_info")
 
         # get the port status
-        status = conn.get("/api/status/ethernet")
+        status = await self.http_get(f"http://{url}/api/status/ethernet")
         print(f"status={status}")
+
         port_numbers = [ d["port"] for d in status ]
         print(f"port_numbers={port_numbers}")
 
         # now get the timestamps
-        deltatimes = conn.get("/api/status/event/ethernet")
-        
-        print(f"deltatimes={deltatimes}")
-        if hostname not in ethernet_stats:
-            ethernet_stats[hostname] = EthernetDeviceMeasure(hostname, port_numbers)
-        ethernet_stats[hostname].update(deltatimes)
+#        deltatimes = await self.http_get(f"http://{url}/api/status/event/ethernet")
+#        print(f"deltatimes={deltatimes}")
 
-        print(f"stats={ethernet_stats[hostname].stats}")
-        self.render("ethernet.html", product_info=product_info, ports=status, stats=ethernet_stats[hostname].stats )
+        hostname = self.get_argument("router")
+
+        # if we haven't seen this hostname before, add it to our global dict
+        if hostname not in ethernet_stats:
+            ethernet_stats[hostname] = StatusEthernet(hostname, port_numbers)
+        ethernet_stats[hostname].update(status)
+
+        self.render("ethernet.html", product_info=product_info, ports=status)
 
 def make_app():
     return tornado.web.Application([
@@ -224,6 +251,7 @@ def make_app():
         (r"/client", ClientHandler),
         (r"/lan", LanHandler),
         (r"/api/lan", APILanHandler),
+        (r"/api/ethernet", APIEthernetHandler),
         (r"/css/(.*)", tornado.web.StaticFileHandler, {"path":"css"} ),
         (r"/js/(.*)", tornado.web.StaticFileHandler, {"path":"js"} ),
         ],

@@ -16,7 +16,7 @@
 		<h2 id="product_name">{{ escape(product_info['product_name']) }}</h2>
 
 		<p>
-			<table class="table table-striped">
+			<table id="ethernet_table" class="table table-striped">
 			<thead>
 				<tr>
 					<td>Port</td>
@@ -28,33 +28,21 @@
 					<td>PoE Allocation</td>
 					<td>PoE Current</td>
 					<td>PoE Voltage</td>
-					<td>Last deltatime (ms)</td>
-					<td>Mean deltatime (ms)</td>
-					<td>Median deltatime (ms)</td>
-					<td>Stdev deltatime (ms)</td>
 					<td>Cool</td>
 				</tr>
 			</thead>
 			<tbody>
 				{% for p in ports %}
-				<tr>
+				<tr class="foo">
 					<td>{{ escape(str(p['port'])) }}</td>
 					<td>{{ escape(p['link']) }}</td>
 					<td>{{ escape(p['link_speed']) }}</td>
 					<td>{{ escape(p.get('poe_power', "N/A")) }}</td>
 					<td>{{ escape(p.get('poe_detect', "-")) }}</td>
 					<td>{{ escape(p.get('poe_class', "-")) }}</td>
-					<td>{{ escape(str(p.get('poe_power_allocation', "-"))) }}</td>
-					<td>{{ escape(str(p.get('poe_current', "-"))) }}</td>
 					<td>{{ escape(str(p.get('poe_voltage', "-"))) }}</td>
-					<td>{{ escape( "%.2f" % (stats[p['port']].get('last',0) / 1e6)) 
-						}}</td>
-					<td>{{ escape( "%.2f" % (stats[p['port']].get('mean',0) / 1e6))
-						}}</td>
-					<td>{{ escape( "%.2f" % (stats[p['port']].get('median',0) / 1e6))
-						}}</td>
-					<td>{{ escape( "%.2f" % (stats[p['port']].get('std',0) / 1e6))
-						}}</td>
+					<td class="poe_current">{{ escape(str(p.get('poe_current', "-"))) }}</td>
+					<td>{{ escape(str(p.get('poe_power_allocation', "-"))) }}</td>
 					<td id="{{"port%s" % p['port']}}"> </td>
 				</tr>
 				{% end %}
@@ -62,9 +50,13 @@
 			</table>
 		</p>
 
+		<div id="poe1">
+		</div>
+
 	</div>
 
 	<script src="https://d3js.org/d3.v6.min.js"></script>
-	<script src="dave.js"></script>
+	<script src="/js/graph.js"></script>
+	<script src="/js/ethernet.js"></script>
 	</body>
 </html>

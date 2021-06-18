@@ -1,4 +1,4 @@
-all: http_client_sync http_server_sync
+all: http_server_sync test_client
 
 netrc:netrc.cc
 	g++ -g3 -Wall -pedantic -o netrc -std=c++17 netrc.cc -lstdc++ -lpthread -lboost_system -lboost_filesystem -lboost_regex -lstdc++fs
@@ -8,10 +8,10 @@ netrc:netrc.cc
 # ../n-json == https://github.com/nlohmann/json
 # ../inja == https://github.com/pantor/inja.git
 
-http_client_sync: http_client_sync.o 
-	gcc -g -Wall -o http_client_sync -std=c++17 -lstdc++ -lpthread  ../cpp-base64/base64-17.o $^
+test_client: test_client.o client_sync.o
+	gcc -g -Wall -o test_client -std=c++17 -lstdc++ -lpthread  ../cpp-base64/base64-17.o $^
 
-http_client_sync.o: http_client_sync.cc 
+test_client.o: test_client.cc 
 	gcc -g -Wall -o $@ -c $^ -I../cpp-base64 -I../n-json/include
 
 http_server_sync: http_server_sync.o client_sync.o

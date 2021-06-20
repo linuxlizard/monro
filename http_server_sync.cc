@@ -40,8 +40,8 @@ namespace net = boost::asio;            // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
 
 /* davep 20210617 ; router we'll proxy for */
-std::string server { "172.86.160.6" };
-std::string port { "80" };
+std::string router { "172.86.160.6" };
+std::string router_port { "80" };
 
 //------------------------------------------------------------------------------
 
@@ -180,7 +180,7 @@ handle_request(
 		std::cout << "api path=" << req.target() << "\n";
 
 		std::string path { req.target() };
-		auto api_res = http_get(server, port, path);
+		auto api_res = http_get(router, router_port, path);
 		std::cout << api_res.body().size() << "\n";
 		auto size = api_res.body().size();
 
@@ -193,6 +193,29 @@ handle_request(
 		res.set(http::field::content_type, "application/json");
 		res.content_length(size);
 		res.keep_alive(req.keep_alive());
+		return send(std::move(res));
+	}
+
+	/* davep 20210618 ; get  */
+	if (req.method() == http::verb::get &&
+			req.target() == "/ethernet") {
+
+		std::string lan_path { "/api/status/ethernet" };
+		auto api_res = http_get(router, router_port, lan_path);
+		std::string s = boost::beast::buffers_to_string(api_res.body().data());
+		nlohmann::json j = nlohmann::json::parse(s);
+		std::cout << j.dump() << "\n";
+
+		Environment env;
+		Template templ = env.parse_template("ethernet2.html");
+		std::string result = env.render(templ, j);
+//		std::cout << result << "\n";
+
+		http::response<http::string_body> res {
+			std::piecewise_construct,
+			std::make_tuple(result),
+			std::make_tuple(http::status::ok, req.version())};
+		res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
 		return send(std::move(res));
 	}
 

@@ -24,6 +24,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <regex>
 
 #include <nlohmann/json.hpp>
 #include <inja.hpp>
@@ -32,16 +33,13 @@
 using namespace inja;
 using json = nlohmann::json;
 
+#include "uri.hpp"
 #include "client_sync.hpp"
 
 namespace beast = boost::beast;         // from <boost/beast.hpp>
 namespace http = beast::http;           // from <boost/beast/http.hpp>
 namespace net = boost::asio;            // from <boost/asio.hpp>
 using tcp = boost::asio::ip::tcp;       // from <boost/asio/ip/tcp.hpp>
-
-/* davep 20210617 ; router we'll proxy for */
-std::string router { "172.86.160.6" };
-std::string router_port { "80" };
 
 //------------------------------------------------------------------------------
 
@@ -172,51 +170,73 @@ handle_request(
         return send(bad_request("Illegal request-target"));
 	}
 
-	/* davep 20210617 ; /api/ shim */
-    if (req.method() == http::verb::get &&
-		req.target().length() >= 6 &&
-		req.target().substr(0,5) == "/api/") 
-	{
-		std::cout << "api path=" << req.target() << "\n";
+	/* get the path and url arguments */
+	std::string url { req.target() };
+	std::string url_path;
+	std::map<std::string, std::string> url_args;
 
-		std::string path { req.target() };
-		auto api_res = http_get(router, router_port, path);
-		std::cout << api_res.body().size() << "\n";
-		auto size = api_res.body().size();
+	if (req.method() == http::verb::get && parse_simple_uri( url, url_path, url_args)) {
 
-		http::response<http::dynamic_body> res {
-			std::piecewise_construct,
-			std::make_tuple(std::move(api_res.body())),
-			std::make_tuple(http::status::ok, req.version())};
+		/* davep 20210617 ; router we'll proxy for */
+		std::string router;
+		try { 
+			router = url_args.at("router");
+		}
+		catch (const std::out_of_range& err) {
+			return send(bad_request("missing argument \"router\""));
+		}
 
-		res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-		res.set(http::field::content_type, "application/json");
-		res.content_length(size);
-		res.keep_alive(req.keep_alive());
-		return send(std::move(res));
-	}
+		std::string router_port;
+		try { 
+			router_port = url_args.at("port");
+		}
+		catch (const std::out_of_range& err) {
+			router_port = "80";
+		}
 
-	/* davep 20210618 ; get  */
-	if (req.method() == http::verb::get &&
-			req.target() == "/ethernet") {
+		/* davep 20210617 ; /api/ shim */
+		if ( url_path.length() >= 6 && url_path.substr(0,5) == "/api/") {
+			std::cout << "api path=" << url_path << "\n";
 
-		std::string lan_path { "/api/status/ethernet" };
-		auto api_res = http_get(router, router_port, lan_path);
-		std::string s = boost::beast::buffers_to_string(api_res.body().data());
-		nlohmann::json j = nlohmann::json::parse(s);
-		std::cout << j.dump() << "\n";
+			auto api_res = http_get(router, router_port, url_path);
+			std::cout << api_res.body().size() << "\n";
+			auto size = api_res.body().size();
 
-		Environment env;
-		Template templ = env.parse_template("ethernet2.html");
-		std::string result = env.render(templ, j);
-//		std::cout << result << "\n";
+			http::response<http::dynamic_body> res {
+				std::piecewise_construct,
+				std::make_tuple(std::move(api_res.body())),
+				std::make_tuple(http::status::ok, req.version())};
 
-		http::response<http::string_body> res {
-			std::piecewise_construct,
-			std::make_tuple(result),
-			std::make_tuple(http::status::ok, req.version())};
-		res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
-		return send(std::move(res));
+			res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+			res.set(http::field::content_type, "application/json");
+			res.content_length(size);
+			res.keep_alive(req.keep_alive());
+			return send(std::move(res));
+		}
+
+		/* davep 20210618 ; get /ethernet */
+		if ( url_path == "/ethernet") {
+
+			std::string lan_path { "/api/status/ethernet" };
+			auto api_res = http_get(router, router_port, lan_path);
+			std::string s = boost::beast::buffers_to_string(api_res.body().data());
+			nlohmann::json j = nlohmann::json::parse(s);
+//			std::cout << j.dump() << "\n";
+			j["data"][0]["poe_power"] = "<script>alert(1)</script>";
+
+			Environment env;
+			Template templ = env.parse_template("ethernet2.html");
+			std::string result = env.render(templ, j);
+	//		std::cout << result << "\n";
+
+			http::response<http::string_body> res {
+				std::piecewise_construct,
+				std::make_tuple(result),
+				std::make_tuple(http::status::ok, req.version())};
+			res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+			res.keep_alive(req.keep_alive());
+			return send(std::move(res));
+		}
 	}
 
     // Build the path to the requested file

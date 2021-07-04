@@ -1,4 +1,4 @@
-ll: http_server_sync test_client test_uri
+all: http_server_sync test_client test_uri
 
 netrc:netrc.cc
 	g++ -g3 -Wall -pedantic -o netrc -std=c++17 netrc.cc -lstdc++ -lpthread -lboost_system -lboost_filesystem -lboost_regex -lstdc++fs

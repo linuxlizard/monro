@@ -170,6 +170,12 @@ class RouterHandler(tornado.web.RequestHandler):
         json = tornado.escape.json_decode(response.body)
         return json['data']
 
+    async def http_get_csv(self, url):
+        http = tornado.httpclient.AsyncHTTPClient()
+        response = await http.fetch(url, 
+                                    auth_username="admin", 
+                                    auth_password=os.getenv("CP_PASSWORD"))
+        return response.body
 
 class ProductInfoHandler(RouterHandler):
     async def get(self):
@@ -184,7 +190,7 @@ class ProductInfoHandler(RouterHandler):
         self.render("product_info.html", 
             product_info = product_info )
 
-class APIEthernetHandler(RouterHandler):
+class API_EthernetHandler(RouterHandler):
     async def get(self):
         self.set_header("Content-Type", "text/json")
 
@@ -195,10 +201,19 @@ class APIEthernetHandler(RouterHandler):
         print(f"ethernet_stats={ethernet_stats}")
         self.write(s)
 
-class APILanHandler(RouterHandler):
+class API_LanHandler(RouterHandler):
     def get(self):
         self.set_header("Content-Type", "text/csv")
         self.write(lan_stats_thread.get_csv())
+
+class API_APStatsHandler(RouterHandler):
+    async def get(self):
+        self.set_header("Content-Type", "text/csv")
+
+        url = self.get_args()
+        apstats = await self.http_get_csv(f"http://{url}/api/wlan/analytics/apstats")
+
+        self.write(apstats)
 
 class LanHandler(RouterHandler):
     async def get(self):
@@ -211,6 +226,23 @@ class LanHandler(RouterHandler):
         stats = json['data']
         print(f"stats={stats}")
         self.render("lan.html", stats=stats)
+
+class APStatsHandler(RouterHandler):
+    async def get(self):
+        url = self.get_args()
+        http = tornado.httpclient.AsyncHTTPClient()
+        response = await http.fetch(f"http://{url}/api/wlan/analytics/apstats", 
+                                    auth_username="admin", 
+                                    auth_password=os.getenv("CP_PASSWORD"))
+#        json = tornado.escape.json_decode(response.body)
+#        stats = json['data']
+        stats = {}
+        print(f"stats={stats}")
+        header = {
+            "title" : "AP Stats",
+            "description" : "WiFi Top Level Statistics" }
+
+        self.render("apstats.html", header=header, stats=stats)
 
 class StatusEthernetHandler(RouterHandler):
     # https://stackoverflow.com/questions/35254742/tornado-server-enable-cors-requests#35259440
@@ -250,8 +282,10 @@ def make_app():
         (r"/ethernet", StatusEthernetHandler),
         (r"/client", ClientHandler),
         (r"/lan", LanHandler),
-        (r"/api/lan", APILanHandler),
-        (r"/api/ethernet", APIEthernetHandler),
+        (r"/apstats", APStatsHandler),
+        (r"/api/lan", API_LanHandler),
+        (r"/api/ethernet", API_EthernetHandler),
+        (r"/api/apstats", API_APStatsHandler),
         (r"/css/(.*)", tornado.web.StaticFileHandler, {"path":"css"} ),
         (r"/js/(.*)", tornado.web.StaticFileHandler, {"path":"js"} ),
         ],

@@ -225,7 +225,7 @@ handle_request(
 			j["data"][0]["poe_power"] = "<script>alert(1)</script>";
 
 			Environment env;
-			Template templ = env.parse_template("ethernet2.html");
+			Template templ = env.parse_template("ethernet_cc.html");
 			std::string result = env.render(templ, j);
 	//		std::cout << result << "\n";
 

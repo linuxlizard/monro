@@ -1,2 +1,8 @@
-hint: pipenv install
+hint: 
+pipenv install
+export CP_PASSWORD=your-router-password
+pipenv run python3 serv.py
+
+
+TODO. Get router IP/Password through UI.
 

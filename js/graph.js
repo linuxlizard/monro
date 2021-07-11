@@ -11,9 +11,9 @@ class Graph {
 
 		this.margin = {
 			top: 10,
-			right: 10,
+			right: 20,
 			bottom: 50,
-			left: 100 };
+			left: 60 };
 
 	}
 
@@ -38,10 +38,18 @@ class Graph {
 
 		this.xScale = d3
 			.scaleLinear()
-//			.domain(d3.extent(data,x))
-			.domain([0,256-1]) // maximum amount of data to graph
-//			.domain([0,data.length-1])
+//			.domain([0,256-1]) // maximum amount of data to graph
+			.domain([0,data.length-1])
 			.range([0, this.width - this.margin.left - this.margin.right])
+			;
+
+		// XXX fiddling with date scale
+		this.x = (d) => d["timestamp"];
+		this.xScale = d3.
+			scaleTime()
+			.domain([this.x(data[0]), this.x(data[data.length-1])])
+			.range([0,data.length-1])
+			.nice()
 			;
 
 		const yScale = d3
@@ -52,7 +60,9 @@ class Graph {
 			;
 
 		const lineGenerator = d3.line()
-			.x((d,i) => this.xScale(i))
+			// timestamp xScale/xAccessor
+			.x((d,i) => this.xScale(this.x(d)))
+//			.x((d,i) => this.xScale(i))
 			.y(d => yScale(this.y(d)))
 			;
 
@@ -66,11 +76,31 @@ class Graph {
 		// axes
 		const xAxisGenerator = d3.axisBottom()
 			.scale(this.xScale)
+			.ticks(18)
 			;
+
 		const xAxis = this.bounds.append("g")
 			.call(xAxisGenerator)
 			.style("transform", `translateY(${this.height - this.margin.bottom - this.margin.top}px)`)
 			;
+
+		xAxis.append("text")
+			.attr("x", this.width - 400)
+			.attr("y", -4)
+			.attr("font-weight", "bold")
+			.attr("text-anchor", "end")
+			.attr("fill", "black")
+			.text("hello, world")
+			;
+
+		// https://stackoverflow.com/questions/11189284/d3-axis-labeling#11194968
+//		this.bounds.append("text")
+//			.attr("class", "y label")
+//			.attr("text-anchor", "end")
+//			.attr("y", -6)
+//			.attr("dy", ".75em")
+//			.attr("transform", "rotate(-90)")
+//			.text("life expectancy (years)");
 
 		const yAxisGenerator = d3.axisLeft()
 			.scale(yScale)
@@ -80,6 +110,19 @@ class Graph {
 			.attr("class", "yaxis")
 			.call(yAxisGenerator)
 			;
+
+		// "Fullstack Data Visualization with D3"
+		// https://www.newline.co/fullstack-d3
+		yAxis.append("text")
+			.attr("x", 10 ) // -this.height / 2)
+			.attr("y", 10 ) //, -this.margin.left + 10)
+			.attr("fill", "black")
+			.style("font-size", "1.4em")
+			.style("transform", "rotate(-90deg)")
+			.style("text-anchor", "middle")
+			.text("Relative humidity")
+			;
+
 	} // end draw()
 
 	update(data) 

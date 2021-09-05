@@ -33,24 +33,27 @@ class Graph {
 			.append("g")
 			.style(
 				"transform",
-				`translate(${this.margin.left}px, ${this.margin.top}px)`
-			);
-
-		this.xScale = d3
-			.scaleLinear()
-//			.domain([0,256-1]) // maximum amount of data to graph
-			.domain([0,data.length-1])
-			.range([0, this.width - this.margin.left - this.margin.right])
+				`translate(${this.margin.left}px, ${this.margin.top}px)`)
 			;
 
-		// XXX fiddling with date scale
-		this.x = (d) => d["timestamp"];
-		this.xScale = d3.
-			scaleTime()
-			.domain([this.x(data[0]), this.x(data[data.length-1])])
-			.range([0,data.length-1])
-			.nice()
-			;
+		if (0) {
+			this.xScale = d3
+				.scaleLinear()
+	//			.domain([0,256-1]) // maximum amount of data to graph
+				.domain([0,data.length-1])
+				.range([0, this.width - this.margin.left - this.margin.right])
+				;
+		} 
+		else {
+			// XXX fiddling with date scale
+			this.x = (d) => d["timestamp"];
+			this.xScale = d3.
+				scaleTime()
+				.domain([this.x(data[0]), this.x(data[data.length-1])])
+				.range([0,data.length-1])
+				.nice()
+				;
+		}
 
 		const yScale = d3
 			.scaleLinear()
@@ -76,7 +79,7 @@ class Graph {
 		// axes
 		const xAxisGenerator = d3.axisBottom()
 			.scale(this.xScale)
-			.ticks(18)
+			.ticks(6)
 			;
 
 		const xAxis = this.bounds.append("g")
@@ -111,16 +114,17 @@ class Graph {
 			.call(yAxisGenerator)
 			;
 
+		// Y Axis Label
 		// "Fullstack Data Visualization with D3"
 		// https://www.newline.co/fullstack-d3
-		yAxis.append("text")
-			.attr("x", 10 ) // -this.height / 2)
-			.attr("y", 10 ) //, -this.margin.left + 10)
-			.attr("fill", "black")
-			.style("font-size", "1.4em")
-			.style("transform", "rotate(-90deg)")
-			.style("text-anchor", "middle")
-			.text("Relative humidity")
+//		yAxis.append("text")
+//			.attr("x", 10 ) // -this.height / 2)
+//			.attr("y", 10 ) //, -this.margin.left + 10)
+//			.attr("fill", "black")
+//			.style("font-size", "1.4em")
+//			.style("transform", "rotate(-90deg)")
+//			.style("text-anchor", "middle")
+//			.text("Relative humidity")
 			;
 
 	} // end draw()

@@ -211,7 +211,21 @@ class API_APStatsHandler(RouterHandler):
         self.set_header("Content-Type", "text/csv")
 
         url = self.get_args()
-        apstats = await self.http_get_csv(f"http://{url}/api/wlan/analytics/apstats")
+        try:
+            apstats = await self.http_get_csv(f"http://{url}/api/wlan/analytics/apstats")
+        except tornado.httpclient.HTTPClientError as err:
+            header = {
+                "title" : "Error",
+                "description" : "Error" }
+            self.render("error.html", header=header)
+            return
+            
+
+        print(f"apstats={apstats} {type(apstats)}")
+        if type(apstats)==type({}) and "success" in apstats and not apstats["success"]:
+            # something went wrong
+            self.render("error.html")
+            return
 
         self.write(apstats)
 
@@ -231,9 +245,22 @@ class APStatsHandler(RouterHandler):
     async def get(self):
         url = self.get_args()
         http = tornado.httpclient.AsyncHTTPClient()
-        response = await http.fetch(f"http://{url}/api/wlan/analytics/apstats", 
-                                    auth_username="admin", 
-                                    auth_password=os.getenv("CP_PASSWORD"))
+        try:
+            response = await http.fetch(f"http://{url}/api/wlan/analytics/apstats", 
+                                        auth_username="admin", 
+                                        auth_password=os.getenv("CP_PASSWORD"))
+        except tornado.httpclient.HTTPClientError as err:
+            print(f"{dir(err)}")
+            print(f"err={err} {err.code} {err.message}")
+            header = {
+                "title" : "Error %d" % err.code,
+                "description" : "Error" }
+            error = { 
+                "code": err.code,
+                "message": err.message }
+            self.render("error.html", header=header, error=error)
+            return
+
 #        json = tornado.escape.json_decode(response.body)
 #        stats = json['data']
         stats = {}
@@ -310,7 +337,7 @@ if __name__ == "__main__":
     app = make_app()
     app.listen(8888)
 
-    init_lan_status_thread()
+#    init_lan_status_thread()
 
     tornado.ioloop.IOLoop.current().start()
 

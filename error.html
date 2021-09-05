@@ -1,0 +1,13 @@
+{% include header.html %}
+
+	<body>
+	<div class="container">
+		<h1 id="error">Error {{ error["code"] }}</h1>
+		<h2>{{ error["message"] }}</h2>
+		<div class="alert alert-danger" role="alert">
+		  {{ error["message"] }}
+		</div>
+	</div>
+
+	</body>
+</html>

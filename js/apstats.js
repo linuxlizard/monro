@@ -25,6 +25,7 @@ window.onload=function()
 	d3.csv(path)
 	.then(function(data) {
 		console.log(data);
+
 		// convert timestamp to JavaScript Date object; incoming timestamps are in seconds 
 		// but Date wants milliseconds
 		data.forEach(function(value,idx,arr) {
@@ -38,6 +39,9 @@ window.onload=function()
 
 		tx_rate_graph.draw(data);
 		rx_rate_graph.draw(data);
+	})
+	.catch( error => {
+		console.warn(`path=${path} error=${error}`);
 	});
 }
 

@@ -1,0 +1,91 @@
+{% include header.html %}
+
+	<body>
+	<div class="container">
+		<h1 id="wifi">Router WiFi BSS {{ bss['name'] + " " + bss['bssid'] }}</h1>
+		<h2>{{ timestamp }} </h2>
+
+		<div class="card-group">
+			<div class="card">
+				<div class="card-header"><h3>Stats</h3></div>
+				<div class="card-body text-primary">
+					<table class="table table-striped">
+					<tbody>
+						<tr>
+							<td>Number of Clients</td>
+							<td>{{ len(bss['clients']) }}</td>
+						</tr>
+						<tr>
+							<td>TX Packets</td>
+							<td>{{ bss['tx_packets'] }}</td>
+						</tr>
+						<tr>
+							<td>TX Bytes</td>
+							<td>{{ bss['tx_bytes'] }}</td>
+						</tr>
+						<tr>
+							<td>TX Error</td>
+							<td>{{ bss['tx_err'] }}</td>
+						</tr>
+						<tr>
+							<td>Retries</td>
+							<td>{{ bss['retries'] }}</td>
+						</tr>
+						<tr>
+							<td>RX Packets</td>
+							<td>{{ bss['rx_packets'] }}</td>
+						</tr>
+						<tr>
+							<td>RX Bytes</td>
+							<td>{{ bss['rx_bytes'] }}</td>
+						</tr>
+						<tr>
+							<td>RX Err</td>
+							<td>{{ bss['rx_err'] }}</td>
+						</tr>
+						<tr>
+							<td>Auth Attempts</td>
+							<td>{{ bss['mlme_auth_attempt'] }} </td>
+						</tr>
+						<tr>
+							<td>Auth Success</td>
+							<td>{{ bss['authorize_success'] }} </td>
+						</tr>
+					</tbody>
+					</table>
+				</div> <!-- end card-body -->
+			</div> <!-- card -->
+
+			<div class="card">
+				<div class="card-header"><h3>Client List</h3></div>
+				<div class="card-body text-primary">
+					<table class="table table-striped">
+					<thead>
+						<tr>
+							<td>Mac Address</td>
+							<td>Time Connected</td>
+						</tr>
+					</thead>
+					<tbody>
+						{% for client in bss['clients'] %}
+						<tr>
+							<td>{{ client['macaddr'] }} </td>
+							<td>{{ client['assoc_time'] }} </td>
+						</tr>
+						{% end %}
+					</tbody>
+					</table>
+				</div> <!-- end card-body -->
+			</div> <!-- end card -->
+
+		</div> <!-- end card-group -->
+	</div>
+
+	<script src="https://d3js.org/d3.v6.min.js"></script>
+	<script src="/js/graph.js"></script>
+	<script src="/js/bss.js"></script>
+	</body>
+</html>
+
+
+ 

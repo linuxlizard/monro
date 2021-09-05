@@ -16,6 +16,14 @@
 					<table class="table table-striped">
 					<tbody>
 						<tr>
+							<td>Channel</td>
+							<td>???</td>
+						</tr>
+						<tr>
+							<td>Number of Clients</td>
+							<td>{{ radio['client_count'] }}</td>
+						</tr>
+						<tr>
 							<td>TX Packets</td>
 							<td>{{ radio['tx_packets'] }}</td>
 						</tr>
@@ -54,8 +62,10 @@
 					<table class="table table-striped">
 					<tbody>
 						{% for vap in radio['bss'] %}
-						<tr>BSS {{ escape(vap['name']) }} </tr>
-						<tr>{{ escape(vap['bssid']) }} </tr>
+						<tr>
+							<td>BSS {{ escape(vap['name']) }} </td>
+							<td><a href="bss?radio={{ radio['name'] }}&bssid={{ escape(vap['bssid']) }}">{{ escape(vap['bssid']) }}</a> </td>
+						</tr>
 					 	{% end %}
 					</tbody>
 					</table>

@@ -164,9 +164,22 @@ class RouterHandler(tornado.web.RequestHandler):
 
     async def http_get(self, url):
         http = tornado.httpclient.AsyncHTTPClient()
-        response = await http.fetch(url, 
-                                    auth_username="admin", 
-                                    auth_password=os.getenv("CP_PASSWORD"))
+        try:
+            response = await http.fetch(url, 
+                                        auth_username="admin", 
+                                        auth_password=os.getenv("CP_PASSWORD"))
+        except tornado.httpclient.HTTPClientError as err:
+            print(f"{dir(err)}")
+            print(f"err={err} {err.code} {err.message}")
+            header = {
+                "title" : "Error %d" % err.code,
+                "description" : "Error" }
+            error = { 
+                "code": err.code,
+                "message": err.message }
+            self.render("error.html", header=header, error=error)
+            return
+
         json = tornado.escape.json_decode(response.body)
         return json['data']
 
@@ -280,11 +293,46 @@ class WiFiHandler(RouterHandler):
         analytics = json['data']
         timestamp = time.ctime(json['data']['timestamp'])
 
+        for radio in analytics['radio']:
+            radio['client_count'] = 0 
+            for bss in radio['bss']:
+                radio['client_count'] = radio['client_count'] + len(bss['clients'])
+
         header = {
             "title" : "WiFi Stats",
             "description" : "Router WiFi" }
 
         self.render("wifi.html", header=header, timestamp=timestamp, analytics=analytics)
+
+class BSSHandler(RouterHandler):
+    async def get(self):
+        url = self.get_args()
+
+        bssid = self.get_argument("bssid")
+        radio_name = self.get_argument("radio")
+
+        analytics = await self.http_get(f"http://{url}/api/status/wlan/analytics" )
+
+        timestamp = time.ctime(analytics['timestamp'])
+
+        for radio in analytics['radio']:
+            if radio['name'] == radio_name:
+                break
+        else:
+            raise ValueError(radio_name)
+
+        print(f"radio={radio}")
+        for bss in radio['bss']:
+            if bss['bssid'] == bssid:
+                break
+        else:
+            raise ValueError(bssid)
+
+        header = {
+            "title" : "WiFi BSS Stats",
+            "description" : "Router WiFi" }
+
+        self.render("bss.html", header=header, timestamp=timestamp, bss=bss)
 
 class APStatsHandler(RouterHandler):
     async def get(self):
@@ -356,6 +404,7 @@ def make_app():
         (r"/lan", LanHandler),
         (r"/apstats", APStatsHandler),
         (r"/wifi", WiFiHandler),
+        (r"/bss", BSSHandler),
         (r"/api/lan", API_LanHandler),
         (r"/api/ethernet", API_EthernetHandler),
         (r"/api/apstats", API_APStatsHandler),

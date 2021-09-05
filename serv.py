@@ -219,7 +219,6 @@ class API_APStatsHandler(RouterHandler):
                 "description" : "Error" }
             self.render("error.html", header=header)
             return
-            
 
         print(f"apstats={apstats} {type(apstats)}")
         if type(apstats)==type({}) and "success" in apstats and not apstats["success"]:
@@ -228,6 +227,21 @@ class API_APStatsHandler(RouterHandler):
             return
 
         self.write(apstats)
+
+class API_StatusTreeHandler(RouterHandler):
+    async def get(self, path):
+        self.set_header("Content-Type", "text/json")
+
+        # TODO error checking
+        url = self.get_args()
+
+        print(f"uri={self.request.uri}")
+        print(f"path={self.request.path}")
+        print(f"path={path}")
+
+        status = await self.http_get_csv(f"http://{url}/api/status/{path}")
+
+        self.write(status)
 
 class LanHandler(RouterHandler):
     async def get(self):
@@ -240,6 +254,37 @@ class LanHandler(RouterHandler):
         stats = json['data']
         print(f"stats={stats}")
         self.render("lan.html", stats=stats)
+
+class WiFiHandler(RouterHandler):
+    async def get(self):
+        url = self.get_args()
+
+        http = tornado.httpclient.AsyncHTTPClient()
+        try:
+            response = await http.fetch(f"http://{url}/api/status/wlan/analytics", 
+                                        auth_username="admin", 
+                                        auth_password=os.getenv("CP_PASSWORD"))
+        except tornado.httpclient.HTTPClientError as err:
+            print(f"{dir(err)}")
+            print(f"err={err} {err.code} {err.message}")
+            header = {
+                "title" : "Error %d" % err.code,
+                "description" : "Error" }
+            error = { 
+                "code": err.code,
+                "message": err.message }
+            self.render("error.html", header=header, error=error)
+            return
+
+        json = tornado.escape.json_decode(response.body)
+        analytics = json['data']
+        timestamp = time.ctime(json['data']['timestamp'])
+
+        header = {
+            "title" : "WiFi Stats",
+            "description" : "Router WiFi" }
+
+        self.render("wifi.html", header=header, timestamp=timestamp, analytics=analytics)
 
 class APStatsHandler(RouterHandler):
     async def get(self):
@@ -310,9 +355,11 @@ def make_app():
         (r"/client", ClientHandler),
         (r"/lan", LanHandler),
         (r"/apstats", APStatsHandler),
+        (r"/wifi", WiFiHandler),
         (r"/api/lan", API_LanHandler),
         (r"/api/ethernet", API_EthernetHandler),
         (r"/api/apstats", API_APStatsHandler),
+        (r"/api/status/(.*)", API_StatusTreeHandler),
         (r"/css/(.*)", tornado.web.StaticFileHandler, {"path":"css"} ),
         (r"/js/(.*)", tornado.web.StaticFileHandler, {"path":"js"} ),
         ],

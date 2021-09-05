@@ -1,0 +1,77 @@
+{% include header.html %}
+
+	<body>
+	<div class="container">
+		<h1 id="wifi">Router WiFi</h1>
+		<h2>{{ timestamp }} </h2>
+
+		<!-- https://getbootstrap.com/docs/5.1/components/card/#card-groups -->
+		<div class="card-group">
+			{% for radio in analytics['radio'] %}
+			<div class="card">
+				<div class="card-header">Radio {{ escape(radio['name']) + " " + escape(radio['macaddr']) }}</div>
+				<!-- <div class="card-body text-primary">  -->
+				<ul class="list-group list-group-flush">
+				<li class="list-group-item">
+					<table class="table table-striped">
+					<tbody>
+						<tr>
+							<td>TX Packets</td>
+							<td>{{ radio['tx_packets'] }}</td>
+						</tr>
+						<tr>
+							<td>TX Bytes</td>
+							<td>{{ radio['tx_bytes'] }}</td>
+						</tr>
+						<tr>
+							<td>TX Error</td>
+							<td>{{ radio['tx_err'] }}</td>
+						</tr>
+						<tr>
+							<td>RX Packets</td>
+							<td>{{ radio['rx_packets'] }}</td>
+						</tr>
+						<tr>
+							<td>RX Bytes</td>
+							<td>{{ radio['rx_bytes'] }}</td>
+						</tr>
+						<tr>
+							<td>RX Err</td>
+							<td>{{ radio['rx_err'] }}</td>
+						</tr>
+						<tr>
+							<td>Auth Attempts</td>
+							<td>{{ radio['mlme_auth_attempt'] }} </td>
+						</tr>
+						<tr>
+							<td>Auth Success</td>
+							<td>{{ radio['authorize_success'] }} </td>
+						</tr>
+					</tbody>
+					</table>
+				</li>
+				<li class="list-group-item">
+					<table class="table table-striped">
+					<tbody>
+						{% for vap in radio['bss'] %}
+						<tr>BSS {{ escape(vap['name']) }} </tr>
+						<tr>{{ escape(vap['bssid']) }} </tr>
+					 	{% end %}
+					</tbody>
+					</table>
+				</li>
+				</ul>
+				<!-- </div> -->
+			</div>
+			{% end %}
+		</div>
+
+	</div>
+
+	<script src="https://d3js.org/d3.v6.min.js"></script>
+	<script src="/js/graph.js"></script>
+	<script src="/js/wifi.js"></script>
+	</body>
+</html>
+
+

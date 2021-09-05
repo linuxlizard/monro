@@ -10,12 +10,17 @@ window.onload=function()
 	let obps_graph = new Graph(1000,200,"obps","#graph3");
 
 	let url = new URL(document.URL);
-	const path = url.origin + "/api/status/lan";
+	const path = url.origin + "/api/lan";
+	console.log(`path=${path}`);
 
-	d3.json(path)
-		.then(function(data) {
-			console.table(data["data"]);
-	});
+	// XXX why did I put this code here?
+//	d3.json(path)
+//		.then(function(data) {
+//			console.table(data["data"]);
+//		})
+//		.catch( error => { 
+//			console.warn(`path=${path} error=${error}`);
+//		});
 
 	d3.csv("http://localhost:8888/api/lan")
 	.then(function(data) {

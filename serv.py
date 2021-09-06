@@ -8,6 +8,7 @@ import time
 import json
 import threading
 import collections
+from urllib.parse import urlparse
 
 import numpy as np
 import tornado.ioloop
@@ -143,19 +144,6 @@ class MainHandler(tornado.web.RequestHandler):
     def get(self):
         self.write("Hello, world")
 
-class ClientHandler(tornado.web.RequestHandler):
-    async def get(self):
-        print("ClientHandler get")
-        http = tornado.httpclient.AsyncHTTPClient()
-        response = await http.fetch(f"http://{hostname}/api/status/wlan", 
-                                    auth_username="admin", 
-                                    auth_password=os.getenv("CP_PASSWORD"))
-        json = tornado.escape.json_decode(response.body)
-        print(f"json={json}")
-#        self.write("Fetched " + str(len(json["entries"])) + " entries "
-#                   "from the FriendFeed API")
-        self.write("Hello, world")
-        
 class RouterHandler(tornado.web.RequestHandler):
     def get_args(self):
         router = self.get_argument("router")
@@ -308,11 +296,13 @@ class BSSHandler(RouterHandler):
     async def get(self):
         url = self.get_args()
 
+        # TODO error checking
         bssid = self.get_argument("bssid")
         radio_name = self.get_argument("radio")
 
         analytics = await self.http_get(f"http://{url}/api/status/wlan/analytics" )
 
+        # convert timestamp to happy human value
         timestamp = time.ctime(analytics['timestamp'])
 
         for radio in analytics['radio']:
@@ -321,12 +311,14 @@ class BSSHandler(RouterHandler):
         else:
             raise ValueError(radio_name)
 
-        print(f"radio={radio}")
         for bss in radio['bss']:
             if bss['bssid'] == bssid:
                 break
         else:
             raise ValueError(bssid)
+
+        urlfields = urlparse(self.request.uri)
+        print(f"query={urlfields.query}")
 
         header = {
             "title" : "WiFi BSS Stats",
@@ -334,6 +326,37 @@ class BSSHandler(RouterHandler):
 
         self.render("bss.html", header=header, timestamp=timestamp, bss=bss)
 
+class ClientHandler(RouterHandler):
+    async def get(self):
+        url = self.get_args()
+
+        # TODO error checking
+        bssid = self.get_argument("bssid")
+        radio_name = self.get_argument("radio")
+        macaddr = self.get_argument("macaddr")
+
+        print(f"ClientHandler get {radio_name} {bssid} {macaddr}")
+        analytics = await self.http_get(f"http://{url}/api/status/wlan/analytics" )
+
+        # convert timestamp to happy human value
+        timestamp = time.ctime(analytics['timestamp'])
+
+        print(f"analytics={analytics}")
+
+        client_radio = [ radio for radio in analytics['radio'] for bss in radio['bss'] for client in bss['clients'] 
+            if radio['name'] == radio_name and bss['bssid'] == bssid and client['macaddr'] == macaddr ]
+
+        print(f"radio={client_radio}")
+
+        client = client_radio[0]['bss'][0]['clients'][0]
+        print(f"client={client}")
+
+        header = {
+            "title" : "WiFi Client Stats",
+            "description" : "Router WiFi" }
+
+        self.render("client.html", header=header, timestamp=timestamp, client=client)
+        
 class APStatsHandler(RouterHandler):
     async def get(self):
         url = self.get_args()

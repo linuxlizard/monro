@@ -29,7 +29,7 @@
 						</tr>
 						<tr>
 							<td>Retries</td>
-							<td>{{ bss['retries'] }}</td>
+							<td>{{ bss['retries'] }} ({{"%8.3f" % (bss['retries'] / bss['tx_packets']) }}%)</td>
 						</tr>
 						<tr>
 							<td>RX Packets</td>
@@ -69,8 +69,10 @@
 					<tbody>
 						{% for client in bss['clients'] %}
 						<tr>
-							<td>{{ client['macaddr'] }} </td>
+							<td><a href="client?macaddr={{ client['macaddr'] + '&' + request.query }}">{{ client['macaddr'] }} </a></td>
 							<td>{{ client['assoc_time'] }} </td>
+							<td>{{ request.uri }} </td>
+							<td>{{ request.query }} </td>
 						</tr>
 						{% end %}
 					</tbody>

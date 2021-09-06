@@ -1,0 +1,51 @@
+{% include header.html %}
+
+	<body>
+	<div class="container">
+		<h1 id="wifi">Client WiFi {{ client['macaddr'] }} </h1>
+		<h2>{{ timestamp }} </h2>
+
+		<table class="table table-striped">
+			<thead>
+			</thead>
+			<tbody>
+						<tr>
+							<td>TX Packets</td>
+							<td>{{ client['tx_packets'] }}</td>
+						</tr>
+						<tr>
+							<td>TX Bytes</td>
+							<td>{{ client['tx_bytes'] }}</td>
+						</tr>
+						<tr>
+							<td>TX Error</td>
+							<td>{{ client['tx_discard'] + client['tx_failed'] }}</td>
+						</tr>
+						<tr>
+							<td>Retries</td>
+							<td>{{ client['retries'] }}</td>
+						</tr>
+						<tr>
+							<td>RX Packets</td>
+							<td>{{ client['rx_packets'] }}</td>
+						</tr>
+						<tr>
+							<td>RX Bytes</td>
+							<td>{{ client['rx_bytes'] }}</td>
+						</tr>
+						<tr>
+							<td>RX Err</td>
+							<td>{{ client['rx_err'] }}</td>
+						</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<script src="https://d3js.org/d3.v6.min.js"></script>
+	<script src="/js/graph.js"></script>
+	<script src="/js/client.js"></script>
+	</body>
+</html>
+
+
+

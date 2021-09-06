@@ -64,7 +64,9 @@
 						{% for vap in radio['bss'] %}
 						<tr>
 							<td>BSS {{ escape(vap['name']) }} </td>
-							<td><a href="bss?radio={{ radio['name'] }}&bssid={{ escape(vap['bssid']) }}">{{ escape(vap['bssid']) }}</a> </td>
+							<td>
+								<a href="bss?radio={{ radio['name'] }}&bssid={{ escape(vap['bssid']) }}&{{ request.query }}">{{ escape(vap['bssid']) }}</a> 
+							</td>
 						</tr>
 					 	{% end %}
 					</tbody>

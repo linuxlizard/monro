@@ -157,15 +157,14 @@ class RouterHandler(tornado.web.RequestHandler):
                                         auth_username="admin", 
                                         auth_password=os.getenv("CP_PASSWORD"))
         except tornado.httpclient.HTTPClientError as err:
-            print(f"{dir(err)}")
-            print(f"err={err} {err.code} {err.message}")
+            print(f"url={url} err={err} {err.code} {err.message}")
             header = {
                 "title" : "Error %d" % err.code,
                 "description" : "Error" }
             error = { 
                 "code": err.code,
                 "message": err.message }
-            self.render("error.html", header=header, error=error)
+#            self.render("error.html", header=header, error=error)
             return
 
         json = tornado.escape.json_decode(response.body)
@@ -260,26 +259,28 @@ class WiFiHandler(RouterHandler):
     async def get(self):
         url = self.get_args()
 
-        http = tornado.httpclient.AsyncHTTPClient()
-        try:
-            response = await http.fetch(f"http://{url}/api/status/wlan/analytics", 
-                                        auth_username="admin", 
-                                        auth_password=os.getenv("CP_PASSWORD"))
-        except tornado.httpclient.HTTPClientError as err:
-            print(f"{dir(err)}")
-            print(f"err={err} {err.code} {err.message}")
-            header = {
-                "title" : "Error %d" % err.code,
-                "description" : "Error" }
-            error = { 
-                "code": err.code,
-                "message": err.message }
-            self.render("error.html", header=header, error=error)
-            return
+#        http = tornado.httpclient.AsyncHTTPClient()
+#        try:
+#            response = await http.fetch(f"http://{url}/api/status/wlan/analytics", 
+#                                        auth_username="admin", 
+#                                        auth_password=os.getenv("CP_PASSWORD"))
+#        except tornado.httpclient.HTTPClientError as err:
+#            print(f"{dir(err)}")
+#            print(f"err={err} {err.code} {err.message}")
+#            header = {
+#                "title" : "Error %d" % err.code,
+#                "description" : "Error" }
+#            error = { 
+#                "code": err.code,
+#                "message": err.message }
+#            self.render("error.html", header=header, error=error)
+#            return
+        
 
-        json = tornado.escape.json_decode(response.body)
-        analytics = json['data']
-        timestamp = time.ctime(json['data']['timestamp'])
+#        json = tornado.escape.json_decode(response.body)
+#        analytics = json['data']
+        analytics = await self.http_get(f"http://{url}/api/status/wlan/analytics" )
+        timestamp = time.ctime(analytics['timestamp'])
 
         for radio in analytics['radio']:
             radio['client_count'] = 0 
@@ -360,26 +361,29 @@ class ClientHandler(RouterHandler):
 class APStatsHandler(RouterHandler):
     async def get(self):
         url = self.get_args()
-        http = tornado.httpclient.AsyncHTTPClient()
-        try:
-            response = await http.fetch(f"http://{url}/api/wlan/analytics/apstats", 
-                                        auth_username="admin", 
-                                        auth_password=os.getenv("CP_PASSWORD"))
-        except tornado.httpclient.HTTPClientError as err:
-            print(f"{dir(err)}")
-            print(f"err={err} {err.code} {err.message}")
-            header = {
-                "title" : "Error %d" % err.code,
-                "description" : "Error" }
-            error = { 
-                "code": err.code,
-                "message": err.message }
-            self.render("error.html", header=header, error=error)
-            return
+
+#        http = tornado.httpclient.AsyncHTTPClient()
+#        try:
+#            response = await http.fetch(f"http://{url}/api/wlan/analytics/apstats", 
+#                                        auth_username="admin", 
+#                                        auth_password=os.getenv("CP_PASSWORD"))
+#        except tornado.httpclient.HTTPClientError as err:
+#            print(f"{dir(err)}")
+#            print(f"err={err} {err.code} {err.message}")
+#            header = {
+#                "title" : "Error %d" % err.code,
+#                "description" : "Error" }
+#            error = { 
+#                "code": err.code,
+#                "message": err.message }
+#            self.render("error.html", header=header, error=error)
+#            return
 
 #        json = tornado.escape.json_decode(response.body)
 #        stats = json['data']
-        stats = {}
+#        stats = {}
+        stats = await self.http_get_csv(f"http://{url}/api/wlan/analytics/apstats")
+
         print(f"stats={stats}")
         header = {
             "title" : "AP Stats",

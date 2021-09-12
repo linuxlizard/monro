@@ -29,7 +29,7 @@
 						</tr>
 						<tr>
 							<td>Retries</td>
-							<td>{{ bss['retries'] }} ({{"%8.3f" % (bss['retries'] / bss['tx_packets']) }}%)</td>
+							<td>{{ bss['retries'] }} (%{{"%8.2f" % bss['retry_percent'] }})</td>
 						</tr>
 						<tr>
 							<td>RX Packets</td>

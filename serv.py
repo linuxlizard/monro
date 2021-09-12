@@ -5,12 +5,13 @@
 
 import os
 import time
+import logging
 import json
 import threading
 import collections
 from urllib.parse import urlparse
 
-import numpy as np
+#import numpy as np
 import tornado.ioloop
 import tornado.web
 import tornado.httpclient
@@ -18,6 +19,19 @@ import tornado.httpclient
 import logfile
 
 #hostname = "172.16.253.1"
+
+class GetError(Exception):
+    """ something went wrong in http_get() or http_get_csv() """
+    pass
+
+class RouterAPIError(Exception):
+    """Router /api call reported success:False"""
+    pass
+
+class RouterAPIEmptyResponse(Exception):
+    """Router /api call reported success:False or a None response"""
+    # a None response usually indicates a bad path
+    pass
 
 class StatusEthernetPort:
     # capture the deltatime in reading the port status
@@ -145,12 +159,22 @@ class MainHandler(tornado.web.RequestHandler):
         self.write("Hello, world")
 
 class RouterHandler(tornado.web.RequestHandler):
+    def haz_error(self, r_json):
+        if not r_json['success']:
+            # firmware rejected our request with an error
+            # TODO add nice extra info here
+            raise RouterAPIError()
+        elif r_json['data'] is None:
+            raise RouterAPIEmptyResponse("No data returned")
+        else:
+            return r_json['data']
+
     def get_args(self):
         router = self.get_argument("router")
         port = self.get_argument("port", default="80")
         return "%s:%s" % (router, port)
 
-    async def http_get(self, url):
+    async def _fetch(self, url):
         http = tornado.httpclient.AsyncHTTPClient()
         try:
             response = await http.fetch(url, 
@@ -164,31 +188,42 @@ class RouterHandler(tornado.web.RequestHandler):
             error = { 
                 "code": err.code,
                 "message": err.message }
-#            self.render("error.html", header=header, error=error)
-            return
+            self.render("error.html", header=header, error=error)
+            raise GetError(err.message)
 
-        json = tornado.escape.json_decode(response.body)
-        return json['data']
+        return response
+
+
+    async def http_get(self, url):
+        # fetch a router /api ; expect a json response
+        print(f"http_get {url}")
+
+        response = await self._fetch(url)
+        r_json = tornado.escape.json_decode(response.body)
+        print(f"http_get json={r_json}")
+
+        return self.haz_error(r_json)
 
     async def http_get_csv(self, url):
-        http = tornado.httpclient.AsyncHTTPClient()
-        response = await http.fetch(url, 
-                                    auth_username="admin", 
-                                    auth_password=os.getenv("CP_PASSWORD"))
+        # expect a CSV file
+        print(f"http_get_csv {url}")
+        response = await self._fetch(url)
         return response.body
 
-class ProductInfoHandler(RouterHandler):
     async def get(self):
+        try:
+            await self._do_get()
+        except GetError:
+            # A helper http_get failed and we hopefully jumped to the error page.
+            # We're done here.
+            pass
+
+class ProductInfoHandler(RouterHandler):
+    async def _do_get(self):
         url = self.get_args()
-        http = tornado.httpclient.AsyncHTTPClient()
-        response = await http.fetch(f"http://{url}/api/status/product_info", 
-                                    auth_username="admin", 
-                                    auth_password=os.getenv("CP_PASSWORD"))
-        json = tornado.escape.json_decode(response.body)
-        print(f"json={json}")
-        product_info = json['data']
-        self.render("product_info.html", 
-            product_info = product_info )
+
+        product_info = await self.http_get(f"http://{url}/api/status/product_info")
+        self.render("product_info.html", product_info = product_info )
 
 class API_EthernetHandler(RouterHandler):
     async def get(self):
@@ -228,6 +263,19 @@ class API_APStatsHandler(RouterHandler):
 
         self.write(apstats)
 
+class API_WiFiAnalyticsHandler(RouterHandler):
+    async def get(self, path):
+        url = self.get_args()
+        macaddr = self.get_argument("macaddr")
+
+        urlfields = urlparse(self.request.uri)
+        print(f"{self.request.uri} path={path} query={urlfields.query}")
+
+        query_path = f"http://{url}/api/wlan/analytics/{path}?{urlfields.query}"
+        csv_data = await self.http_get_csv(query_path)
+
+        self.write(csv_data)
+
 class API_StatusTreeHandler(RouterHandler):
     async def get(self, path):
         self.set_header("Content-Type", "text/json")
@@ -259,27 +307,18 @@ class WiFiHandler(RouterHandler):
     async def get(self):
         url = self.get_args()
 
-#        http = tornado.httpclient.AsyncHTTPClient()
-#        try:
-#            response = await http.fetch(f"http://{url}/api/status/wlan/analytics", 
-#                                        auth_username="admin", 
-#                                        auth_password=os.getenv("CP_PASSWORD"))
-#        except tornado.httpclient.HTTPClientError as err:
-#            print(f"{dir(err)}")
-#            print(f"err={err} {err.code} {err.message}")
-#            header = {
-#                "title" : "Error %d" % err.code,
-#                "description" : "Error" }
-#            error = { 
-#                "code": err.code,
-#                "message": err.message }
-#            self.render("error.html", header=header, error=error)
-#            return
-        
+        try:
+            analytics = await self.http_get(f"http://{url}/api/status/wlan/analytics" )
+        except RouterAPIEmptyResponse:
+            header = {
+                "title" : "Error",
+                "description" : "Analytics not running" }
+            error = {
+                "code": 503,
+                "message": "Analytics not running on router"}
+            self.render("error.html", header=header, error=error)
+            return
 
-#        json = tornado.escape.json_decode(response.body)
-#        analytics = json['data']
-        analytics = await self.http_get(f"http://{url}/api/status/wlan/analytics" )
         timestamp = time.ctime(analytics['timestamp'])
 
         for radio in analytics['radio']:
@@ -320,6 +359,11 @@ class BSSHandler(RouterHandler):
 
         urlfields = urlparse(self.request.uri)
         print(f"query={urlfields.query}")
+
+        if bss['tx_packets'] == 0:
+            bss['retry_percent'] = 0
+        else:
+            bss['retry_percent'] = (bss['retries'] / bss['tx_packets']) * 100
 
         header = {
             "title" : "WiFi BSS Stats",
@@ -362,26 +406,6 @@ class APStatsHandler(RouterHandler):
     async def get(self):
         url = self.get_args()
 
-#        http = tornado.httpclient.AsyncHTTPClient()
-#        try:
-#            response = await http.fetch(f"http://{url}/api/wlan/analytics/apstats", 
-#                                        auth_username="admin", 
-#                                        auth_password=os.getenv("CP_PASSWORD"))
-#        except tornado.httpclient.HTTPClientError as err:
-#            print(f"{dir(err)}")
-#            print(f"err={err} {err.code} {err.message}")
-#            header = {
-#                "title" : "Error %d" % err.code,
-#                "description" : "Error" }
-#            error = { 
-#                "code": err.code,
-#                "message": err.message }
-#            self.render("error.html", header=header, error=error)
-#            return
-
-#        json = tornado.escape.json_decode(response.body)
-#        stats = json['data']
-#        stats = {}
         stats = await self.http_get_csv(f"http://{url}/api/wlan/analytics/apstats")
 
         print(f"stats={stats}")
@@ -396,7 +420,7 @@ class StatusEthernetHandler(RouterHandler):
 #    def set_default_headers(self):
 #        self.set_header("Access-Control-Allow-Origin", "*")
 
-    async def get(self):
+    async def _do_get(self):
         url = self.get_args()
 
         # what router are we talking to?
@@ -435,6 +459,7 @@ def make_app():
         (r"/api/lan", API_LanHandler),
         (r"/api/ethernet", API_EthernetHandler),
         (r"/api/apstats", API_APStatsHandler),
+        (r"/api/wlan/analytics/(.*)", API_WiFiAnalyticsHandler),
         (r"/api/status/(.*)", API_StatusTreeHandler),
         (r"/css/(.*)", tornado.web.StaticFileHandler, {"path":"css"} ),
         (r"/js/(.*)", tornado.web.StaticFileHandler, {"path":"js"} ),
@@ -459,6 +484,8 @@ def init_lan_status_thread():
 if __name__ == "__main__":
     app = make_app()
     app.listen(8888)
+
+    logging.basicConfig(level=logging.DEBUG)
 
 #    init_lan_status_thread()
 

@@ -2,6 +2,10 @@
 
 const router = "172.16.253.1";
 
+const keys = [ 'port', 'link', 'link_speed', 'poe_power',
+				'poe_detect', 'poe_class', 'poe_voltage',
+				'poe_current', 'poe_power_allocation' ]
+
 window.onload=function() 
 {
 	console.log("hello, world");
@@ -23,11 +27,13 @@ window.onload=function()
 //	});
 
 	const url = `/api/ethernet?router=${router}`;
+	const portnum = 7;
+
 	d3.json(url)
 		.then(function(data) {
 			console.log(`data=${data}`);
 			console.table(data);
-			const wan_port = data[0];
+			const plot_port = data[portnum];
 
 //			d3.select("#ethernet_table")
 //				.select("tbody")
@@ -35,7 +41,7 @@ window.onload=function()
 //				.selectAll(".poe_current")
 //				.data(data);
 
-			poe_graph.draw( Array(wan_port) );
+			poe_graph.draw( [ data[portnum] ] );
 
 //			const matrix = [
 //			  [11975,  5871, 8916, 2868],
@@ -65,22 +71,22 @@ window.onload=function()
 		d3.json(url)
 			.then(function(data) {
 
-				const poe_current = (d) => d['poe_current'];
+//				const poe_current = (d) => d['poe_current'];
 
 				// update the table
+				// https://github.com/d3/d3-selection/blob/v3.0.0/README.md#joining-data
 				d3.select("#ethernet_table")
 					.select("tbody")
 					.selectAll("tr")
 					.data(data)
 					.join("tr")
 					.selectAll("td")
-					.data( d => Object.values(d) )
+					.data( d => keys.map( k => d[k] === undefined ? "-" : d[k] ))
 					.join("td")
-					.text(d=>d);
+						.text(d=>d);
 
-//				console.table(data);
-				const wan_port = data[0];
-				poe_graph.update( Array(wan_port) );
+				const plot_port = data[portnum];
+				poe_graph.update( [ data[portnum] ] );
 			});
 		}
 		, 1000

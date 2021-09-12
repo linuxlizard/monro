@@ -3,8 +3,9 @@
 	<body>
 	<div class="container">
 		<h1 id="wifi">Router WiFi</h1>
-		<h2>{{ timestamp }} </h2>
+		<h3>{{ timestamp }} </h3>
 
+		<h2>Radios</h2>
 		<!-- https://getbootstrap.com/docs/5.1/components/card/#card-groups -->
 		<div class="card-group">
 			{% for radio in analytics['radio'] %}
@@ -65,7 +66,7 @@
 						<tr>
 							<td>BSS {{ escape(vap['name']) }} </td>
 							<td>
-								<a href="bss?radio={{ radio['name'] }}&bssid={{ escape(vap['bssid']) }}&{{ request.query }}">{{ escape(vap['bssid']) }}</a> 
+								<a href="bss?radio={{ radio['name'] }}&bssid={{ escape(vap['bssid']) + "&" + request.query }}">{{ escape(vap['bssid']) }}</a> 
 							</td>
 						</tr>
 					 	{% end %}
@@ -77,6 +78,29 @@
 			</div>
 			{% end %}
 		</div>
+
+		<!-- table of all clients -->
+		<h2>Clients</h2>
+		<table class="table table-striped">
+		<thead>
+			<tr>
+				<td>macaddr</td>
+				<td>AP</td>
+			</tr>
+		</thead>
+		<tbody>
+		{% for radio in analytics['radio'] %}
+			{% for bss in radio['bss'] %}
+				{% for client in bss['clients'] %}
+					<tr>
+						<td><a href="client?radio={{escape(radio['name']) + '&bssid=' + bss['bssid'] + '&macaddr=' + client['macaddr'] + '&' + request.query }}">{{ client['macaddr'] }} </a></td>
+						<td>{{ escape(radio['name']) + " " + escape(bss['name']) }} </td>
+					</tr>
+				{% end %}
+			{% end %}
+		{% end %}
+		</tbody>
+		</table>
 
 	</div>
 

@@ -36,11 +36,14 @@ class Graph {
 				`translate(${this.margin.left}px, ${this.margin.top}px)`)
 			;
 
-		this.xScale = d3
-			.scaleLinear()
-			.domain([0,60-1]) // maximum amount of data to graph
-//			.domain([0,256-1]) // maximum amount of data to graph
-			.range([0, this.width - this.margin.left - this.margin.right])
+		// XXX fiddling with date scale
+		this.x = (d) => d["timestamp"];
+		this.xScale = d3.
+			scaleTime()
+			.domain([this.x(data[0]), this.x(data[data.length-1])])
+			.range([0,this.width-1])
+//				.range([0,data.length-1])
+			.nice()
 			;
 
 		const yScale = d3
@@ -51,7 +54,8 @@ class Graph {
 			;
 
 		const lineGenerator = d3.line()
-			.x((d,i) => this.xScale(i))
+			// timestamp xScale/xAccessor
+			.x((d,i) => this.xScale(this.x(d)))
 			.y(d => yScale(this.y(d)))
 			;
 
@@ -136,7 +140,7 @@ class Graph {
 
 		// get the current data, add newest sample
 		let new_data = this.line.datum();
-		if (new_data.length >= 60) {
+		if (new_data.length >= 256) {
 			new_data.shift();
 		}
 		new_data.push(row);

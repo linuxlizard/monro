@@ -11,13 +11,13 @@ window.onload=function()
 	console.log(`path=${path}`);
 
 	const height = 200;
-	const width = 1800;
+	const width = d3.select(".container").node().clientWidth - 50;
 
-	let tx_packets_graph = new Graph(width, height,"tx_packets","#graph1");
-	let tx_bytes_graph = new Graph(width, height, "tx_packets","#graph2");
+	let tx_packets_graph = new Graph(width, height,"tx_packets","#tx_packets");
+	let tx_bytes_graph = new Graph(width, height, "tx_bytes","#tx_bytes");
 
-	let rx_packets_graph = new Graph(width, height, "rx_packets","#graph3");
-	let rx_bytes_graph = new Graph(width, height,"rx_bytes","#graph4");
+	let rx_packets_graph = new Graph(width, height, "rx_packets","#rx_packets");
+	let rx_bytes_graph = new Graph(width, height,"rx_bytes","#rx_bytes");
 
 	let tx_rate_graph = new Graph(width, height, "tx_rate", "#tx_rate_graph");
 	let rx_rate_graph = new Graph(width, height, "rx_rate", "#rx_rate_graph");

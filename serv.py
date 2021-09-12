@@ -366,8 +366,8 @@ class APStatsHandler(RouterHandler):
 
 class StatusEthernetHandler(RouterHandler):
     # https://stackoverflow.com/questions/35254742/tornado-server-enable-cors-requests#35259440
-    def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
+#    def set_default_headers(self):
+#        self.set_header("Access-Control-Allow-Origin", "*")
 
     async def get(self):
         url = self.get_args()

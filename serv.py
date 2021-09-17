@@ -321,10 +321,13 @@ class WiFiHandler(RouterHandler):
 
         timestamp = time.ctime(analytics['timestamp'])
 
+        # remove disabled radios
+        analytics['radio'] = [ r for r in analytics['radio'] if r.get("enabled",False) ]
         for radio in analytics['radio']:
             radio['client_count'] = 0 
+            radio['bss'] = [b for b in radio['bss'] if b.get("enabled",False) ]
             for bss in radio['bss']:
-                radio['client_count'] = radio['client_count'] + len(bss['clients'])
+                radio['client_count'] = radio.get('client_count',0) + len(bss.get('clients',[]))
 
         header = {
             "title" : "WiFi Stats",
@@ -388,8 +391,10 @@ class ClientHandler(RouterHandler):
 
         print(f"analytics={analytics}")
 
-        client_radio = [ radio for radio in analytics['radio'] for bss in radio['bss'] for client in bss['clients'] 
-            if radio['name'] == radio_name and bss['bssid'] == bssid and client['macaddr'] == macaddr ]
+        analytics['radio'] = [ r for r in analytics['radio'] if r.get("enabled",False)]
+
+        client_radio = [ radio for radio in analytics['radio'] for bss in radio['bss'] for client in bss.get('clients',[]) 
+            if radio['name'] == radio_name and bss['enabled'] and bss['bssid'] == bssid and client['macaddr'] == macaddr ]
 
         print(f"radio={client_radio}")
 

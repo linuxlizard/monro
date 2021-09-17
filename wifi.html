@@ -18,7 +18,7 @@
 					<tbody>
 						<tr>
 							<td>Channel</td>
-							<td>???</td>
+							<td>{{ radio.get('channel') or 0 }}</td>
 						</tr>
 						<tr>
 							<td>Number of Clients</td>
@@ -67,6 +67,9 @@
 							<td>BSS {{ escape(vap['name']) }} </td>
 							<td>
 								<a href="bss?radio={{ radio['name'] }}&bssid={{ escape(vap['bssid']) + "&" + request.query }}">{{ escape(vap['bssid']) }}</a> 
+							</td>
+							<td>
+								{{ escape(vap.get('ssid') or "(unknown/invalid)") }}
 							</td>
 						</tr>
 					 	{% end %}

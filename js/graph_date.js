@@ -1,7 +1,8 @@
 /* davep@mbuf.com 20210605 ; dynamic graph in d3 */
 'use strict';
 
-class Graph {
+class GraphDate {
+	// graph with date/time X-Axis
 	constructor(width, height, key, select) 
 	{
 		this.width = width;
@@ -69,7 +70,7 @@ class Graph {
 		// axes
 		const xAxisGenerator = d3.axisBottom()
 			.scale(this.xScale)
-			.ticks(6)
+			.ticks(12)
 			;
 
 		const xAxis = this.bounds.append("g")
@@ -103,7 +104,7 @@ class Graph {
 			;
 		const yAxis = this.bounds.append("g")
 			.attr("class", "yaxis")
-			.style("fill", "blue")
+//			.style("fill", "blue")
 			.call(yAxisGenerator)
 			;
 		yAxis.append("text")

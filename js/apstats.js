@@ -11,7 +11,7 @@ window.onload=function()
 	console.log(`path=${path}`);
 
 	const height = 200;
-	const width = d3.select(".container").node().clientWidth - 50;
+	const width = d3.select(".container").node().clientWidth - 100;
 
 	let tx_packets_graph = new Graph(width, height,"tx_packets","#tx_packets");
 	let tx_bytes_graph = new Graph(width, height, "tx_bytes","#tx_bytes");

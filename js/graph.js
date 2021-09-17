@@ -99,7 +99,7 @@ class Graph {
 			;
 		const yAxis = this.bounds.append("g")
 			.attr("class", "yaxis")
-			.style("fill", "blue")
+//			.style("fill", "blue")
 			.call(yAxisGenerator)
 			;
 		yAxis.append("text")

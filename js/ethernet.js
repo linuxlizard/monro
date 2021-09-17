@@ -1,7 +1,5 @@
 "use strict";
 
-const router = "172.16.253.1";
-
 const keys = [ 'port', 'link', 'link_speed', 'poe_power',
 				'poe_detect', 'poe_class', 'poe_voltage',
 				'poe_current', 'poe_power_allocation' ]
@@ -26,7 +24,8 @@ window.onload=function()
 //		console.log(`data=${data}`);
 //	});
 
-	const url = `/api/ethernet?router=${router}`;
+	let target = new URL(document.URL);
+	const url = "/api/ethernet" + target.search;
 	const portnum = 7;
 
 	d3.json(url)

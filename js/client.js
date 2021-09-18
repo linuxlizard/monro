@@ -36,21 +36,33 @@ window.onload=function()
 	console.log(`width=${width}`);
 
 	let tx_packets_graph = new GraphDate(width, height,"tx_packets","#tx_packets");
+	let tx_bytes_graph = new GraphDate(width, height,"tx_bytes","#tx_bytes");
+
 	let rx_packets_graph = new GraphDate(width, height,"rx_packets","#rx_packets");
+	let rx_bytes_graph = new GraphDate(width, height,"rx_bytes","#rx_bytes");
+	let rx_rssi_graph = new GraphDate(width, height,"rx_rssi","#rx_rssi");
+
+	let retries = new GraphDate(width, height,"retries","#retries");
 
 	d3.csv(csv_path())
 	.then(function(data) {
-		console.table(data);
+//		console.table(data);
 
 		// convert timestamp to JavaScript Date object; incoming timestamps are in seconds 
 		// but Date wants milliseconds
 		data.forEach(function(value,idx,arr) {
 			arr[idx]["timestamp"] = new Date(Number(value["timestamp"])*1000)
 		});
+		console.log(data[0]["timestamp"]);
 
 		tx_packets_graph.draw(data);
-		rx_packets_graph.draw(data);
+		tx_bytes_graph.draw(data);
 
+		rx_packets_graph.draw(data);
+		rx_bytes_graph.draw(data);
+		rx_rssi_graph.draw(data);
+
+		retries.draw(data);
 	});
 
 	let poll_analytics = (function(poll_url) {

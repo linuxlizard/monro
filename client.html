@@ -10,6 +10,10 @@
 			</thead>
 			<tbody>
 						<tr>
+							<td>Connected</td>
+							<td>{{ client['connected_at'] }}</td>
+						</tr>
+						<tr>
 							<td>TX Packets</td>
 							<td>{{ client['tx_packets'] }}</td>
 						</tr>
@@ -43,7 +47,19 @@
 		<div id="tx_packets" class="graph">
 		</div>
 
+		<div id="tx_bytes" class="graph">
+		</div>
+
 		<div id="rx_packets" class="graph">
+		</div>
+
+		<div id="rx_bytes" class="graph">
+		</div>
+
+		<div id="rx_rssi" class="graph">
+		</div>
+
+		<div id="retries" class="graph">
 		</div>
 
 	</div>  <!-- end container !-->

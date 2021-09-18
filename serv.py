@@ -389,17 +389,20 @@ class ClientHandler(RouterHandler):
         # convert timestamp to happy human value
         timestamp = time.ctime(analytics['timestamp'])
 
-        print(f"analytics={analytics}")
-
+        # throw away disabled radios
         analytics['radio'] = [ r for r in analytics['radio'] if r.get("enabled",False)]
 
+        # find this particular client in our data
         client_radio = [ radio for radio in analytics['radio'] for bss in radio['bss'] for client in bss.get('clients',[]) 
             if radio['name'] == radio_name and bss['enabled'] and bss['bssid'] == bssid and client['macaddr'] == macaddr ]
 
-        print(f"radio={client_radio}")
-
+        # the filter above should give us exactly one entry
         client = client_radio[0]['bss'][0]['clients'][0]
         print(f"client={client}")
+
+        # convert assoc_time (seconds since associated) into a date/time string
+        # showing when this client connected
+        client['connected_at'] = time.asctime(time.localtime(time.time() - client['assoc_time']))
 
         header = {
             "title" : "WiFi Client Stats",

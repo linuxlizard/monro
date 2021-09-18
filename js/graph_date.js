@@ -19,7 +19,7 @@ class GraphDate {
 	}
 
 	draw(data) {
-		console.log(data);
+//		console.log(data);
 
 //		const y = (d) => Number(d["in"]);
 		this.y = (d) => Number(d[this.key]);
@@ -39,11 +39,10 @@ class GraphDate {
 
 		// XXX fiddling with date scale
 		this.x = (d) => d["timestamp"];
-		this.xScale = d3.
-			scaleTime()
+		this.xScale = d3
+			.scaleTime()
 			.domain([this.x(data[0]), this.x(data[data.length-1])])
 			.range([0,this.width-1])
-//				.range([0,data.length-1])
 			.nice()
 			;
 
@@ -68,9 +67,15 @@ class GraphDate {
 			.attr("stroke-width", 2)
 
 		// axes
-		const xAxisGenerator = d3.axisBottom()
+		const timeFormat = d3.timeFormat("%H:%M");
+
+		console.log(timeFormat(data[0].timestamp));
+
+		const xAxisGenerator = d3
+			.axisBottom()
 			.scale(this.xScale)
 			.ticks(12)
+//			.call(timeFormat)
 			;
 
 		const xAxis = this.bounds.append("g")

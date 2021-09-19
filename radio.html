@@ -1,0 +1,79 @@
+{% include header.html %}
+
+	<body>
+
+	<div id="main" class="container">
+		<h1 id="wifi">{{ radio['band_name'] }} WiFi Radio</h1>
+		<h3>{{ timestamp }} </h3>
+
+		<table class="table table-striped">
+			<tbody>
+						<tr>
+							<td>Channel</td>
+							<td>{{ radio.get('channel') or 0 }}</td>
+						<tr>
+							<td>TX Packets</td>
+							<td>{{ radio['tx_packets'] }}</td>
+						</tr>
+						<tr>
+							<td>TX Bytes</td>
+							<td>{{ radio['tx_bytes'] }}</td>
+						</tr>
+						<tr>
+							<td>TX Error</td>
+							<td>{{ radio['tx_discard'] + radio['tx_err'] }}</td>
+						</tr>
+						<tr>
+							<td>RX Packets</td>
+							<td>{{ radio['rx_packets'] }}</td>
+						</tr>
+						<tr>
+							<td>RX Bytes</td>
+							<td>{{ radio['rx_bytes'] }}</td>
+						</tr>
+						<tr>
+							<td>RX Err</td>
+							<td>{{ radio['rx_err'] }}</td>
+						</tr>
+			</tbody>
+		</table>
+
+		<div id="tx_packets" class="graph">
+		</div>
+
+		<div id="tx_bytes" class="graph">
+		</div>
+
+		<div id="rx_packets" class="graph">
+		</div>
+
+		<div id="rx_bytes" class="graph">
+		</div>
+
+		<div id="tx_rate" class="graph">
+		</div>
+		<div id="rx_rate" class="graph">
+		</div>
+
+	</div> <!-- end container -->
+
+	<div id="mcs_container" class="container">
+		<div class="row row-cols-2">
+			<div class="col">
+				<div id="tx_mcs_buckets" class="graph">
+				</div>
+			</div>
+			<div class="col">
+				<div id="rx_mcs_buckets" class="graph">
+				</div>
+			</div>
+		</div> <!-- end row -->
+	</div> <!-- end container -->
+
+	<script src="/js/d3.js"></script>
+	<script src="/js/graph_date.js"></script>
+	<script src="/js/radio.js"></script>
+	</body>
+</html>
+
+

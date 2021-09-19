@@ -44,6 +44,9 @@ window.onload=function()
 
 	let retries = new GraphDate(width, height,"retries","#retries");
 
+	let tx_rate_graph = new GraphDate(width, height,"tx_rate","#tx_rate");
+	let rx_rate_graph = new GraphDate(width, height,"rx_rate","#rx_rate");
+
 	d3.csv(csv_path())
 	.then(function(data) {
 //		console.table(data);
@@ -63,6 +66,9 @@ window.onload=function()
 		rx_rssi_graph.draw(data);
 
 		retries.draw(data);
+
+		tx_rate_graph.draw(data);
+		rx_rate_graph.draw(data);
 	});
 
 	let poll_analytics = (function(poll_url) {

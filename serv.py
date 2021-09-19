@@ -16,7 +16,8 @@ import tornado.ioloop
 import tornado.web
 import tornado.httpclient
 
-import logfile
+#import logfile
+import oui
 
 #hostname = "172.16.253.1"
 
@@ -159,6 +160,23 @@ class MainHandler(tornado.web.RequestHandler):
         self.write("Hello, world")
 
 class RouterHandler(tornado.web.RequestHandler):
+    radio_band_str = [ "2.4GHz", "5GHz", "6GHz" ]
+
+    @staticmethod
+    def oui_to_vendor(macaddr):
+        try:
+            vendor = oui.find(oui.parse(macaddr))
+        except KeyError:
+            pass
+
+        if vendor is None:
+            vendor = "(unknown)"
+        else:
+            vendor = vendor[2]
+
+        return vendor
+
+
     def haz_error(self, r_json):
         if not r_json['success']:
             # firmware rejected our request with an error
@@ -266,7 +284,7 @@ class API_APStatsHandler(RouterHandler):
 class API_WiFiAnalyticsHandler(RouterHandler):
     async def get(self, path):
         url = self.get_args()
-        macaddr = self.get_argument("macaddr")
+#        macaddr = self.get_argument("macaddr")
 
         urlfields = urlparse(self.request.uri)
         print(f"{self.request.uri} path={path} query={urlfields.query}")
@@ -323,17 +341,52 @@ class WiFiHandler(RouterHandler):
 
         # remove disabled radios
         analytics['radio'] = [ r for r in analytics['radio'] if r.get("enabled",False) ]
+
+        # fiddle with the radios and clients array
         for radio in analytics['radio']:
             radio['client_count'] = 0 
+
+            radio['band_name'] = self.radio_band_str[radio['wifi_band']]
+
+            # removed disabled bss
             radio['bss'] = [b for b in radio['bss'] if b.get("enabled",False) ]
+            # add client count
             for bss in radio['bss']:
-                radio['client_count'] = radio.get('client_count',0) + len(bss.get('clients',[]))
+                radio['client_count'] = radio['client_count'] + len(bss.get('clients',[]))
+
+
+                for client in bss['clients']:
+                    client['vendor'] = self.oui_to_vendor(client['macaddr'])
 
         header = {
             "title" : "WiFi Stats",
             "description" : "Router WiFi" }
 
         self.render("wifi.html", header=header, timestamp=timestamp, analytics=analytics)
+
+class RadioHandler(RouterHandler):
+    async def get(self):
+        url = self.get_args()
+        radio_name = self.get_argument("radio")
+
+        analytics = await self.http_get(f"http://{url}/api/status/wlan/analytics" )
+
+        # convert timestamp to happy human value
+        timestamp = time.ctime(analytics['timestamp'])
+
+        for radio in analytics['radio']:
+            if radio['name'] == radio_name:
+                break
+        else:
+            raise ValueError(radio_name)
+
+        radio['band_name'] = self.radio_band_str[radio['wifi_band']]
+
+        header = {
+            "title" : f"{radio['band_name']} WiFi Radio Stats",
+            "description" : "WiFi Radio" }
+
+        self.render("radio.html", header=header, timestamp=timestamp, radio=radio)
 
 class BSSHandler(RouterHandler):
     async def get(self):
@@ -389,26 +442,37 @@ class ClientHandler(RouterHandler):
         # convert timestamp to happy human value
         timestamp = time.ctime(analytics['timestamp'])
 
-        # throw away disabled radios
-        analytics['radio'] = [ r for r in analytics['radio'] if r.get("enabled",False)]
-
         # find this particular client in our data
-        client_radio = [ radio for radio in analytics['radio'] for bss in radio['bss'] for client in bss.get('clients',[]) 
-            if radio['name'] == radio_name and bss['enabled'] and bss['bssid'] == bssid and client['macaddr'] == macaddr ]
+        found_client = None
+        for radio in analytics['radio']:
+            if not radio.get("enabled", False):
+                continue
 
-        # the filter above should give us exactly one entry
-        client = client_radio[0]['bss'][0]['clients'][0]
-        print(f"client={client}")
+            for bss in radio['bss']:
+                if not bss.get('enabled', False):
+                    continue
+
+                for client in bss['clients']:
+                    if client['macaddr'] == macaddr:
+                        print( f"found client={macaddr} on bss={bss['name']}:{bss['bssid']} on radio={radio['name']}")
+                        found_client = client
+                        break
+                if found_client:
+                    break
+            if found_client:
+                break
+
+        found_client['vendor'] = self.oui_to_vendor(macaddr)
 
         # convert assoc_time (seconds since associated) into a date/time string
         # showing when this client connected
-        client['connected_at'] = time.asctime(time.localtime(time.time() - client['assoc_time']))
+        client['connected_at'] = time.asctime(time.localtime(time.time() - found_client['assoc_time']))
 
         header = {
             "title" : "WiFi Client Stats",
             "description" : "Router WiFi" }
 
-        self.render("client.html", header=header, timestamp=timestamp, client=client)
+        self.render("client.html", header=header, timestamp=timestamp, client=found_client)
         
 class APStatsHandler(RouterHandler):
     async def get(self):
@@ -464,6 +528,7 @@ def make_app():
         (r"/apstats", APStatsHandler),
         (r"/wifi", WiFiHandler),
         (r"/bss", BSSHandler),
+        (r"/radio", RadioHandler),
         (r"/api/lan", API_LanHandler),
         (r"/api/ethernet", API_EthernetHandler),
         (r"/api/apstats", API_APStatsHandler),

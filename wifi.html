@@ -10,7 +10,10 @@
 		<div class="card-group">
 			{% for radio in analytics['radio'] %}
 			<div class="card">
-				<div class="card-header">Radio {{ escape(radio['name']) + " " + escape(radio['macaddr']) }}</div>
+				<div class="card-header">
+					{{ escape(radio['band_name']) + " on " }}
+					<a href="radio?radio={{ radio['name'] + "&" + request.query }}">{{escape(radio['name']) + " " + escape(radio['macaddr']) }}</a>
+				</div>
 				<!-- <div class="card-body text-primary">  -->
 				<ul class="list-group list-group-flush">
 				<li class="list-group-item">
@@ -19,6 +22,22 @@
 						<tr>
 							<td>Channel</td>
 							<td>{{ radio.get('channel') or 0 }}</td>
+						</tr>
+						<tr>
+							<td>Channel Contention</td>
+							<td>{{ radio['contention'] }}%</td>
+						</tr>
+						<tr>
+							<td>TX Power</td>
+							<td>{{ radio['txpower'] }}% </td>
+						</tr>
+						<tr>
+							<td>Channel Locked</td>
+							<td>{{ "True" if radio['locked'] else "False" }}</td>
+						</tr>
+						<tr>
+							<td>Smart Selection</td>
+							<td>{{ "True" if radio['smart'] else "False" }}</td>
 						</tr>
 						<tr>
 							<td>Number of Clients</td>
@@ -48,19 +67,21 @@
 							<td>RX Err</td>
 							<td>{{ radio['rx_err'] }}</td>
 						</tr>
-						<tr>
-							<td>Auth Attempts</td>
-							<td>{{ radio['mlme_auth_attempt'] }} </td>
-						</tr>
-						<tr>
-							<td>Auth Success</td>
-							<td>{{ radio['authorize_success'] }} </td>
-						</tr>
 					</tbody>
 					</table>
 				</li>
 				<li class="list-group-item">
 					<table class="table table-striped">
+					<thead>
+						<tr>
+							<td>Interface</td>
+							<td>BSSID</td>
+							<td>SSID</td>
+							<td>Security</td>
+							<td>Network</td>
+							<td>Clients</td>
+						</tr>
+					</thead>
 					<tbody>
 						{% for vap in radio['bss'] %}
 						<tr>
@@ -71,6 +92,9 @@
 							<td>
 								{{ escape(vap.get('ssid') or "(unknown/invalid)") }}
 							</td>
+							<td> {{ escape(vap['security']) }} </td>
+							<td> {{ escape(vap['network']) }} </td>
+							<td> {{ len(vap['clients']) }}  </td>
 						</tr>
 					 	{% end %}
 					</tbody>
@@ -83,12 +107,13 @@
 		</div>
 
 		<!-- table of all clients -->
-		<h2>Clients</h2>
+		<h2>All Clients</h2>
 		<table class="table table-striped">
 		<thead>
 			<tr>
 				<td>macaddr</td>
 				<td>AP</td>
+				<td>Vendor</td>
 			</tr>
 		</thead>
 		<tbody>
@@ -97,17 +122,17 @@
 				{% for client in bss['clients'] %}
 					<tr>
 						<td><a href="client?radio={{escape(radio['name']) + '&bssid=' + bss['bssid'] + '&macaddr=' + client['macaddr'] + '&' + request.query }}">{{ client['macaddr'] }} </a></td>
-						<td>{{ escape(radio['name']) + " " + escape(bss['name']) }} </td>
+						<td>{{ escape(radio['band_name']) + " on " + escape(radio['name']) + " " + escape(bss['name']) }} </td>
+						<td>{{ client['vendor'] }}</td>
 					</tr>
 				{% end %}
 			{% end %}
 		{% end %}
 		</tbody>
 		</table>
+	</div> <!-- end container -->
 
-	</div>
-
-	<script src="https://d3js.org/d3.v6.min.js"></script>
+	<script src="/js/d3.js"></script>
 	<script src="/js/graph.js"></script>
 	<script src="/js/wifi.js"></script>
 	</body>

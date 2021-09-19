@@ -69,7 +69,7 @@ class GraphDate {
 		// axes
 		const timeFormat = d3.timeFormat("%H:%M");
 
-		console.log(timeFormat(data[0].timestamp));
+//		console.log(timeFormat(data[0].timestamp));
 
 		const xAxisGenerator = d3
 			.axisBottom()

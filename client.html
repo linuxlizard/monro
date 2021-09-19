@@ -2,7 +2,7 @@
 
 	<body>
 	<div class="container">
-		<h1 id="wifi">Client WiFi {{ client['macaddr'] }} </h1>
+		<h1 id="wifi">WiFi Client {{ client['macaddr'] }} </h1>
 		<h2>{{ timestamp }} </h2>
 
 		<table class="table table-striped">
@@ -12,6 +12,18 @@
 						<tr>
 							<td>Connected</td>
 							<td>{{ client['connected_at'] }}</td>
+						</tr>
+						<tr>
+							<td>Channel Width</td>
+							<td>{{ client['chwidth'] }} </td>
+						</tr>
+						<tr>
+							<td>Station Mode</td>
+							<td>{{ client['stamode'] }} </td>
+						</tr>
+						<tr>
+							<td>Vendor</td>
+							<td>{{ client['vendor'] }}</td>
 						</tr>
 						<tr>
 							<td>TX Packets</td>
@@ -60,6 +72,11 @@
 		</div>
 
 		<div id="retries" class="graph">
+		</div>
+
+		<div id="tx_rate" class="graph">
+		</div>
+		<div id="rx_rate" class="graph">
 		</div>
 
 	</div>  <!-- end container !-->

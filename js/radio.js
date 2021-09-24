@@ -106,7 +106,7 @@ window.onload=function()
 	console.log("hello wifi.js");
 
 	const height = 200;
-	let width = d3.select("#main.container").node().clientWidth - 100;
+	let width = d3.select("#tx_packets.graph").node().clientWidth - 100;
 	console.log(`width=${width}`);
 
 	// get the analytics from our server which gets them from the router
@@ -118,8 +118,8 @@ window.onload=function()
 	let rx_packets_graph = new GraphDate(width, height,"rx_packets","#rx_packets");
 	let rx_bytes_graph = new GraphDate(width, height,"rx_bytes","#rx_bytes");
 
-	let tx_rate_graph = new GraphDate(width, height,"tx_rate_last","#tx_rate");
-	let rx_rate_graph = new GraphDate(width, height,"rx_rate_last","#rx_rate");
+	let tx_rate_graph = new GraphDate(width, height,"tx_rate","#tx_rate");
+	let rx_rate_graph = new GraphDate(width, height,"rx_rate","#rx_rate");
 
 
 	width = d3.select("#tx_mcs_buckets.graph").node().clientWidth - 10;

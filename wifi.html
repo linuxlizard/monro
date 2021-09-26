@@ -92,8 +92,8 @@
 							<td>
 								{{ escape(vap.get('ssid') or "(unknown/invalid)") }}
 							</td>
-							<td> {{ escape(vap['security']) }} </td>
-							<td> {{ escape(vap['network']) }} </td>
+							<td> {{ escape(vap.get('security', "??")) }} </td>
+							<td> {{ escape(vap.get('network', "??")) }} </td>
 							<td> {{ len(vap['clients']) }}  </td>
 						</tr>
 					 	{% end %}

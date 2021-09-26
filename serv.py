@@ -346,14 +346,16 @@ class WiFiHandler(RouterHandler):
         for radio in analytics['radio']:
             radio['client_count'] = 0 
 
-            radio['band_name'] = self.radio_band_str[radio['wifi_band']]
+            try: 
+                radio['band_name'] = self.radio_band_str[radio['wifi_band']]
+            except KeyError:
+                radio['band_name'] = "??"
 
             # removed disabled bss
             radio['bss'] = [b for b in radio['bss'] if b.get("enabled",False) ]
             # add client count
             for bss in radio['bss']:
                 radio['client_count'] = radio['client_count'] + len(bss.get('clients',[]))
-
 
                 for client in bss['clients']:
                     client['vendor'] = self.oui_to_vendor(client['macaddr'])
@@ -380,7 +382,10 @@ class RadioHandler(RouterHandler):
         else:
             raise ValueError(radio_name)
 
-        radio['band_name'] = self.radio_band_str[radio['wifi_band']]
+        try:
+            radio['band_name'] = self.radio_band_str[radio['wifi_band']]
+        except:
+            radio['band_name'] = "??"
 
         header = {
             "title" : f"{radio['band_name']} WiFi Radio Stats",

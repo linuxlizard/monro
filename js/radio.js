@@ -46,17 +46,28 @@ class BarChart
 //		console.log(`xAxis=${xAxis}`);
 //
 		const y = d3
-//			.scaleLog()
-			.scaleLinear()
-			.domain([0, d3.max(data)])
-			.nice()
+			.scaleLog()
+//			.scaleLinear()
+			.domain([1, d3.max(data)])
+//			.domain([0, d3.max(data)])
 			.range([this.height - this.margin.bottom, this.margin.top])
+			.nice()
+			;
 //		console.log(`y=${y}`);
+
+		data.forEach( d => console.log(`${d} ${d+1} ${Math.log(d+1)} ${y(d+1)}`) );
+
+//		console.log(`${y(0)}`);
+//		console.log(`${y(1)}`);
+//		console.log(`${y(2)}`);
+//		console.log(`${y(3)}`);
+//		console.log(`${y(4)}`);
 
 		const x = d3.scaleBand()
 			.domain([0,1,2,3,4,5,6,7,8,9,10,11])
 			.range([this.margin.left, this.width - this.margin.right])
 			.padding(0.1)
+			;
 //		console.log(`x=${x}`);
 //		console.log(`${x(0)}`);
 //		console.log(`${x(1)}`);
@@ -82,12 +93,12 @@ class BarChart
 						return x(idx);
 						})
 				.attr("y", function(d,idx) {
-//						console.log(`y d=${d} idx=${idx} ${y(d)}`);
-						return y(d)
+						console.log(`y d=${d} idx=${idx} ${y(d+1)}`);
+						return y(d+1)
 						})
 				.attr("height", function(d,i,b,c) {
 //					console.log(`height d=${d} i=${i}`);
-					return y(0) - y(d);
+					return y(0+1) - y(d+1);
 					})
 //				.attr("height", d => y(0) - y(d.value))
 				.attr("width", x.bandwidth());

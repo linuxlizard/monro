@@ -67,15 +67,11 @@ class GraphDate {
 			.attr("stroke-width", 2)
 
 		// axes
-		const timeFormat = d3.timeFormat("%H:%M");
-
-//		console.log(timeFormat(data[0].timestamp));
-
 		const xAxisGenerator = d3
 			.axisBottom()
 			.scale(this.xScale)
 			.ticks(12)
-//			.call(timeFormat)
+			.tickFormat(d3.timeFormat("%H:%M"))
 			;
 
 		const xAxis = this.bounds.append("g")

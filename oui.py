@@ -15,7 +15,7 @@ def read_csv(infilename):
 
         yield from reader
 
-@functools.cache
+@functools.lru_cache(maxsize=256)
 def find(oui):
     reader = read_csv(csv_filename)
 

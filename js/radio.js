@@ -176,6 +176,19 @@ window.onload=function()
 		rx_rate_graph.draw(data);
 
 	});
+
+	const btn = d3.select("#mcs_rx_buckets_button");
+	btn.on("click", function(datum, index, nodes) {
+			console.log({datum, index, nodes});
+			if (this.textContent == "Linear") {
+				this.textContent = "Log";
+			}
+			else {
+				this.textContent = "Linear";
+			}
+		});
+
+	console.log(`btn=${btn}`);
 }
 
 

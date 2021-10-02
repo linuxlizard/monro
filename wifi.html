@@ -90,7 +90,7 @@
 								<a href="bss?radio={{ radio['name'] }}&bssid={{ escape(vap['bssid']) + "&" + request.query }}">{{ escape(vap['bssid']) }}</a> 
 							</td>
 							<td>
-								{{ escape(vap.get('ssid') or "(unknown/invalid)") }}
+								{{ vap.get('ssid') or "(unknown/invalid)" }}
 							</td>
 							<td> {{ escape(vap.get('security', "??")) }} </td>
 							<td> {{ escape(vap.get('network', "??")) }} </td>

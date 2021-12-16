@@ -11,6 +11,11 @@
 						<tr>
 							<td>Channel</td>
 							<td>{{ radio.get('channel') or 0 }}</td>
+						</tr>
+						<tr>
+							<td>Num VAPs</td>
+							<td>{{ len(radio['bss']) }} {{ ",".join(bss['name'] for bss in radio['bss']) }} </td>
+						</tr>
 						<tr>
 							<td>TX Packets</td>
 							<td>{{ radio['tx_packets'] }}</td>

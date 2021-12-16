@@ -7,9 +7,11 @@ function get_radio_num(radio_name)
 	return match;
 }
 
-function csv_path(radio_num)
+function csv_path(radio_name)
 {
 	const target = new URL(document.URL);
+
+	const radio_num = get_radio_num(radio_name);
 
 	return target.origin + "/api/wlan/analytics/radio?router=" + target.searchParams.get('router') + "&radio=" + radio_num.toString();
 }
@@ -34,6 +36,10 @@ class BarChart
 	// https://observablehq.com/@d3/zoomable-bar-chart
 	draw(data) {
 
+		const orig_data = data.slice();
+
+		data = data.map(n => Math.log10(n+1));
+
 		const yAxis = g => g
 			.attr("transform", `translate(${this.margin.left},0)`)
 			.call(d3.axisLeft(y))
@@ -46,10 +52,10 @@ class BarChart
 //		console.log(`xAxis=${xAxis}`);
 //
 		const y = d3
-			.scaleLog()
-//			.scaleLinear()
-			.domain([1, d3.max(data)])
-//			.domain([0, d3.max(data)])
+//			.scaleLog()
+			.scaleLinear()
+//			.domain([1, d3.max(data)])
+			.domain([0, d3.max(data)])
 			.range([this.height - this.margin.bottom, this.margin.top])
 			.nice()
 			;
@@ -93,15 +99,25 @@ class BarChart
 						return x(idx);
 						})
 				.attr("y", function(d,idx) {
-						console.log(`y d=${d} idx=${idx} ${y(d+1)}`);
-						return y(d+1)
+//						console.log(`y d=${d} idx=${idx} ${y(d+1)}`);
+						return y(d)
 						})
 				.attr("height", function(d,i,b,c) {
 //					console.log(`height d=${d} i=${i}`);
-					return y(0+1) - y(d+1);
+					return y(0) - y(d);
 					})
 //				.attr("height", d => y(0) - y(d.value))
-				.attr("width", x.bandwidth());
+				.attr("width", x.bandwidth())
+				.attr("data-bs-toggle", "tooltip")
+				.attr("data-bs-placement", "top")
+				.attr("data-bs-animation", true)
+				.attr("title", function(d,i,b,c) { 
+						console.log(`title data=${data} d=${d} i=${i}`);
+						return orig_data[i]
+					})
+			;
+
+//				data-bs-toggle="tooltip" data-bs-placement="top"
 
 		this.wrapper.append("g")
 			.attr("class", "x-axis")
@@ -109,8 +125,18 @@ class BarChart
 
 		this.wrapper.append("g")
 			.attr("class", "y-axis")
-	}
-}
+
+		// https://getbootstrap.com/docs/5.1/components/tooltips/
+//		document.querySelectorAll('[data-bs-toggle="tooltip"]');
+		const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+
+		const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+			return new bootstrap.Tooltip(tooltipTriggerEl)
+		})
+
+	} /* end draw() */
+
+} /* end BarChart */
 
 window.onload=function() 
 {
@@ -138,14 +164,17 @@ window.onload=function()
 	let tx_mcs_buckets_graph = new BarChart(width, height,"11AC","#tx_mcs_buckets");
 	let rx_mcs_buckets_graph = new BarChart(width, height,"11AC","#rx_mcs_buckets");
 
+	const radio_name = target.searchParams.get('radio');
+	const radio_idx = get_radio_num(radio_name);
+
 	const json_path = target.origin + "/api/status/wlan/analytics" + target.search;
 	console.log(`json_path=${json_path}`);
 
 	d3.json(json_path)
 		.then(function(data) {
-			const tx_mcs = data.data.radio[0].MCS.tx;
-			const rx_mcs = data.data.radio[0].MCS.rx;
-			console.log(tx_mcs);
+			const radio = data.data.radio.find( e => e.name == radio_name);
+			const tx_mcs = radio.MCS.tx;
+			const rx_mcs = radio.MCS.rx;
 			tx_mcs_buckets_graph.draw(tx_mcs["11AC"]);
 			rx_mcs_buckets_graph.draw(rx_mcs["11AC"]);
 		})
@@ -153,12 +182,7 @@ window.onload=function()
 //			console.warn(`json_path=${json_path} error=${error}`);
 //		});
 
-	console.log(`csv_path=${csv_path(0)}`);
-
-	const radio_name = target.searchParams.get('radio');
-//	const rnum = get_radio_num(radio_name);
-
-	d3.csv(csv_path(get_radio_num(radio_name)))
+	d3.csv(csv_path(radio_name))
 	.then(function(data) {
 		// convert timestamp to JavaScript Date object; incoming timestamps are in seconds 
 		// but Date wants milliseconds

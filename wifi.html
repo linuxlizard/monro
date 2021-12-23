@@ -70,6 +70,19 @@
 					</tbody>
 					</table>
 				</li>
+			</div> <!-- end class="card" -->
+			{% end %}
+		</div> <!-- end class="card-group" -->
+		<h2>BSS</h2>
+		<div class="card-group">
+			{% for radio in analytics['radio'] %}
+			<div class="card">
+				<div class="card-header">
+					{{ "VAPs on Radio " + escape(radio['band_name']) + " on " }}
+					<a href="radio?radio={{ radio['name'] + "&" + request.query }}">{{escape(radio['name']) + " " + escape(radio['macaddr']) }}</a>
+				</div>
+				<!-- <div class="card-body text-primary">  -->
+				<ul class="list-group list-group-flush">
 				<li class="list-group-item">
 					<table class="table table-striped">
 					<thead>
@@ -85,7 +98,7 @@
 					<tbody>
 						{% for vap in radio['bss'] %}
 						<tr>
-							<td>BSS {{ escape(vap['name']) }} </td>
+							<td>{{ escape(vap['name']) }} </td>
 							<td>
 								<a href="bss?radio={{ radio['name'] }}&bssid={{ escape(vap['bssid']) + "&" + request.query }}">{{ escape(vap['bssid']) }}</a> 
 							</td>
@@ -102,6 +115,38 @@
 				</li>
 				</ul>
 				<!-- </div> -->
+			</div>
+			{% end %}
+		</div>
+		<h2>WiFi-WANs</h2>
+		<div class="card-group">
+			{% for radio in analytics['radio'] %}
+			<div class="card">
+				<ul class="list-group list-group-flush">
+				<li class="list-group-item">
+					<table class="table table-striped">
+						<tr>
+							<td>Interface</td>
+							<td>BSSID</td>
+							<td>SSID</td>
+						</tr>
+					</thead>
+					<tbody>
+						{% for vap in radio.get('wwan', []) %}
+						<tr>
+							<td>{{ escape(vap['name']) }} </td>
+							<td>
+								<a href="bss?radio={{ radio['name'] }}&bssid={{ escape(vap['bssid']) + "&" + request.query }}">{{ escape(vap['bssid']) }}</a> 
+							</td>
+							<td>
+								{{ vap.get('ssid') or "(unknown/invalid)" }}
+							</td>
+						</tr>
+					 	{% end %}
+					</tbody>
+					</table>
+				</li>
+				</ul>
 			</div>
 			{% end %}
 		</div>

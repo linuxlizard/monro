@@ -18,10 +18,24 @@ class GraphDate {
 
 	}
 
-	draw(data) {
+	draw(graph_data) {
 //		console.log(data);
 
-//		const y = (d) => Number(d["in"]);
+		// grab just the field we need
+		let data = [];
+		const key = this.key;
+		for (let i=0 ; i<graph_data.length-1 ; i++) {
+			let row = {timestamp: graph_data[i]["timestamp"] };
+			row[key] = Math.max(0, graph_data[i+1][this.key] - graph_data[i][this.key])
+			data.push(row);
+		}
+
+		// "When a line is generated, the y accessor will be invoked for each
+		// defined element in the input data array, being passed the element d,
+		// the index i, and the array data as three arguments."
+		// https://github.com/d3/d3-shape/blob/v3.0.1/README.md#line
+
+		// plot the raw value
 		this.y = (d) => Number(d[this.key]);
 
 		this.wrapper = d3

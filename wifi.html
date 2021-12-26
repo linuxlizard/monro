@@ -153,28 +153,36 @@
 
 		<!-- table of all clients -->
 		<h2>All Clients</h2>
-		<table class="table table-striped">
-		<thead>
-			<tr>
-				<td>macaddr</td>
-				<td>AP</td>
-				<td>Vendor</td>
-			</tr>
-		</thead>
-		<tbody>
-		{% for radio in analytics['radio'] %}
-			{% for bss in radio['bss'] %}
-				{% for client in bss['clients'] %}
-					<tr>
-						<td><a href="client?radio={{escape(radio['name']) + '&bssid=' + bss['bssid'] + '&macaddr=' + client['macaddr'] + '&' + request.query }}">{{ client['macaddr'] }} </a></td>
-						<td>{{ escape(radio['band_name']) + " on " + escape(radio['name']) + " " + escape(bss['name']) }} </td>
-						<td>{{ client['vendor'] }}</td>
-					</tr>
+		<div class="card-group">
+		<div class="card">
+		<div class="card-body">
+			<table class="table table-striped">
+			<thead>
+				<tr>
+					<td>macaddr</td>
+					<td>AP</td>
+					<td>Vendor</td>
+				</tr>
+			</thead>
+			<tbody>
+			{% for radio in analytics['radio'] %}
+				{% for bss in radio['bss'] %}
+					{% for client in bss['clients'] %}
+						<tr>
+							<td><a href="client?radio={{escape(radio['name']) + '&bssid=' + bss['bssid'] + '&macaddr=' + client['macaddr'] + '&' + request.query }}">{{ client['macaddr'] }} </a></td>
+							<td>{{ escape(radio['band_name']) + " on " + escape(radio['name']) + " " + escape(bss['name']) }} </td>
+							<td>{{ client['vendor'] }}</td>
+						</tr>
+					{% end %}
 				{% end %}
 			{% end %}
-		{% end %}
-		</tbody>
-		</table>
+			</tbody>
+			</table>
+		</div> <!-- end card-body -->
+		</div> <!-- end card -->
+		</div> <!-- end card-group -->
+		<!-- end clients -->
+
 	</div> <!-- end container -->
 
 	<script src="/js/d3.js"></script>

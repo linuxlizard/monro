@@ -44,8 +44,8 @@ window.onload=function()
 
 	let retries = new GraphDate(width, height,"retries","#retries");
 
-	let tx_rate_graph = new GraphDate(width, height,"tx_rate","#tx_rate");
-	let rx_rate_graph = new GraphDate(width, height,"rx_rate","#rx_rate");
+	let tx_rate_graph = new GraphScatter(width, height,"tx_rate","#tx_rate");
+	let rx_rate_graph = new GraphScatter(width, height,"rx_rate","#rx_rate");
 
 	d3.csv(csv_path())
 	.then(function(data) {
@@ -56,7 +56,7 @@ window.onload=function()
 		data.forEach(function(value,idx,arr) {
 			arr[idx]["timestamp"] = new Date(Number(value["timestamp"])*1000)
 		});
-		console.log(data[0]["timestamp"]);
+		console.log("csv callback data[0]=",data[0]["timestamp"]);
 
 		tx_packets_graph.draw(data);
 		tx_bytes_graph.draw(data);
